@@ -32,6 +32,10 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.1
+
+- **The Attack button, the spell buttons and their level-up buttons moved a little to the right,** so they have more space from the bottom panel.
+
 ### 0.18.0
 
 - **A new look for the whole game:** dark iron, polished gold, a gold laurel wreath and small rubies. Every frame was sculpted in 3D and lit, so the metal really shines.
