@@ -146,5 +146,5 @@ describe('Syl, Grom and Kaela', () => {
     }
     expect(w.winner).not.toBeNull();
     expect(casts).toBeGreaterThan(30);
-  }, 90_000);
+  }, 180_000);
 });

@@ -1511,8 +1511,12 @@ export class World {
     const rank = (e: Unit) => (e.structure ? 1 : e.ward ? 2 : 0);
     let best: Unit | undefined;
     let bestKey = Infinity;
-    for (const e of this.enemiesNear(u, u.x, u.y, u.acquireRange, (e) => e.kind !== 'neutral' && this.canSee(u.team, e))) {
-      if (touching && (rank(e) > 0 || !this.inReach(u, e))) continue;
+    const r = touching ? u.attackRange + u.radius : u.acquireRange;
+    for (const e of this.units) {
+      // Cheap checks first: this runs every tick for every creep hitting a building.
+      if (!e.alive || e.team === u.team || e.kind === 'neutral') continue;
+      if (touching ? rank(e) > 0 || dist(u.x, u.y, e.x, e.y) - e.radius > r : dist(u.x, u.y, e.x, e.y) - e.radius > r) continue;
+      if (!this.canAttack(u, e) || !this.canSee(u.team, e)) continue;
       const hostile = e.hero && this.unit(e.targetId)?.team === u.team ? 1 : 0;
       const key = rank(e) * 1e6 + dist(u.x, u.y, e.x, e.y) - hostile;
       if (key < bestKey) {
