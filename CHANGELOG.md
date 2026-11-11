@@ -32,6 +32,12 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.3
+
+- **The Attack and spell buttons moved back a little to the left,** between where they were in 0.18.1 and 0.18.2.
+- **The level-up + buttons stay still** instead of pulsing.
+- **The level-up + is on top of its spell button again.** The new gold rim was covering it.
+
 ### 0.18.2
 
 - **The Attack and spell buttons moved further right:** twice as far as in 0.18.1, so they now sit close to the edge of the screen.

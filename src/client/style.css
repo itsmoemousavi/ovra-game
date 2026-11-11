@@ -132,7 +132,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 #pstats b { color: #ffd23f; font-size: 13px; font-weight: 900; }
 #kda { display: flex; flex-direction: column; font-size: 11px; font-weight: 700; line-height: 1.25; opacity: 0.85; white-space: nowrap; margin-top: 4px; font-variant-numeric: tabular-nums; }
 
-#actions { position: absolute; right: max(2px, calc(var(--sr) - 32px)); bottom: max(12px, var(--sb)); width: 226px; height: 200px; }
+#actions { position: absolute; right: max(10px, calc(var(--sr) - 20px)); bottom: max(12px, var(--sb)); width: 226px; height: 200px; }
 #actions button { position: absolute; border-radius: 50%; border: 2px solid rgba(255,255,255,0.35); background: rgba(20,30,24,0.75); display: grid; place-items: center; touch-action: none; }
 #btn-attack { right: 0; bottom: 0; width: 104px; height: 104px; background: rgba(170,50,50,0.8) !important; font-weight: 800; font-size: 14px; }
 .ability { width: 58px; height: 58px; align-content: center; gap: 1px; overflow: hidden; }
@@ -383,7 +383,7 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 
 
 /* ---------- ability info ---------- */
-#ability-tip { position: absolute; right: calc(max(2px, calc(var(--sr) - 32px)) + 236px); bottom: 20px; width: min(320px, 46%); background: rgba(10,16,12,0.95); border: 2px solid #8cc4ff; border-radius: 10px; padding: 8px 10px; font-size: 12px; z-index: 6; pointer-events: none; }
+#ability-tip { position: absolute; right: calc(max(10px, calc(var(--sr) - 20px)) + 236px); bottom: 20px; width: min(320px, 46%); background: rgba(10,16,12,0.95); border: 2px solid #8cc4ff; border-radius: 10px; padding: 8px 10px; font-size: 12px; z-index: 6; pointer-events: none; }
 /* Item and spell cards: name, per-level mana and cooldown, Stats, Active or Passive. See describe.ts. */
 .c-name { margin: 0 0 3px; font-size: 14px; }
 .c-name small { font-size: 10px; font-weight: 600; color: #ecc875; margin-left: 3px; }
@@ -405,11 +405,11 @@ button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulat
 #set-zoom { width: 140px; accent-color: #3d8bfd; }
 
 /* ---------- left-handed layout ---------- */
-#app.lefty #actions { right: auto; left: max(2px, calc(var(--sl) - 32px)); transform: scaleX(-1); }
+#app.lefty #actions { right: auto; left: max(10px, calc(var(--sl) - 20px)); transform: scaleX(-1); }
 #app.lefty #actions > * { transform: scaleX(-1); }
 #app.lefty #actions .learn.show { animation: none; }
 #app.lefty #cancel-zone { right: auto; left: max(12px, var(--sl)); top: auto; bottom: 230px; }
-#app.lefty #ability-tip { right: auto; left: calc(max(2px, calc(var(--sl) - 32px)) + 236px); }
+#app.lefty #ability-tip { right: auto; left: calc(max(10px, calc(var(--sl) - 20px)) + 236px); }
 #app.lefty #hint { display: none; }
 
 /* The ability area is a layout box only: let taps through to whatever is under its empty parts. */
@@ -1004,3 +1004,6 @@ input#name-input, .friend-screen input { border-radius: 3px !important; border-c
 #clock { color: #f4e6c2; }
 /* Minimap frame (placed by main.ts around the minimap); the shield and ping buttons sit clear of it. */
 #mm-frame { position: absolute; pointer-events: none; background: url('./hud-art/mmframe.png') 0 0 / 100% 100% no-repeat; }
+/* The level-up "+" stays still and always sits above the spell button and its gold rim. */
+#actions .learn { z-index: 5; }
+#actions .learn.show { animation: none; }
