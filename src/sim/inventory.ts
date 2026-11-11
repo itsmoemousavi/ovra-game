@@ -459,7 +459,10 @@ export function updateChannel(w: World, u: Unit, dt: number): boolean {
   const c = h.channel;
   if (!c) return false;
   if (!u.alive || u.stunTimer > 0) {
+    // Stopped by an enemy (stun, root, grab, death): the scroll is spent as if it had worked.
+    // Only the hero's own X (cancelChannel) stops it for free.
     h.channel = null;
+    spendTeleport(h);
     return false;
   }
   // Heading for a hero or creep: follow them while they live, then keep the last place they stood.
@@ -477,13 +480,18 @@ export function updateChannel(w: World, u: Unit, dt: number): boolean {
   u.x = u.px = p.x;
   u.y = u.py = p.y;
   u.path = null;
-  if (h.bonus.teleportBoots) h.tpCooldown = TELEPORT.bootsCooldown;
-  else {
-    h.tpCount--;
-    h.tpCooldown = TELEPORT.cooldown;
-  }
+  spendTeleport(h);
   w.events.push({ type: 'teleport', unitId: u.id });
   return false;
+}
+
+/** A teleport ended, by arriving or by an enemy stopping it: use up a scroll and start the cooldown. */
+export function spendTeleport(h: Hero) {
+  if (h.bonus.teleportBoots) h.tpCooldown = TELEPORT.bootsCooldown;
+  else {
+    h.tpCount = Math.max(0, h.tpCount - 1);
+    h.tpCooldown = TELEPORT.cooldown;
+  }
 }
 
 // ------------------------------------------------------------------ dropping items

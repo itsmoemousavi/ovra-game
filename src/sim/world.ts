@@ -36,7 +36,7 @@ import {
 import { HEROES, HeroId, maxAbilityLevel } from './data/heroes';
 import { BARRACKS, CREEPS, CombatStats, HERO_VISION, MEGA_CREEP_MULT, MELEE_BARRACKS_REGEN, NEUTRALS, STRUCTURES, SUPER_CREEP_MULT } from './data/units';
 import { ITEMS, ItemId, ItemStats, TELEPORT } from './data/items';
-import { GroundItem, ItemSlot, charmSlot, updateItemAuras, buyItem, buyTeleport, dropItem, emptyInventory, expireGroundItems, itemBonuses, pickUpItem, sellCourierItem, sellItem, startTeleport, swapItems, updateChannel, useItem } from './inventory';
+import { GroundItem, ItemSlot, charmSlot, updateItemAuras, buyItem, buyTeleport, dropItem, emptyInventory, expireGroundItems, itemBonuses, pickUpItem, sellCourierItem, sellItem, spendTeleport, startTeleport, swapItems, updateChannel, useItem } from './inventory';
 import { CourierState, courierGround, dropCourierItem, newCourier, sendCourier, updateCouriers } from './courier';
 import { Vision, isInvisible } from './vision';
 import { Rune, activateGlyph, buyback, onHillTop, placeWard, spawnBoss, updateObjectives } from './objectives';
@@ -2009,6 +2009,7 @@ export class World {
       h.deaths++;
       h.respawnTimer = 3 + h.level * 1.5;
       h.order = { type: 'idle' };
+      if (h.channel) spendTeleport(h); // killed mid-teleport: the scroll is spent
       h.channel = null;
       if (charm) {
         // Revive charm: get back up on the spot after a short delay (the charm is used up).

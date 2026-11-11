@@ -146,7 +146,8 @@ describe('teleport', () => {
     w.applyCommand({ type: 'teleport', unitId: v.id, targetId: mine.id });
     w.stun(v, 1);
     run(w, 3.5);
-    expect(v.hero!.tpCount).toBe(2);
+    expect(v.hero!.channel).toBeNull();
+    expect(v.hero!.tpCount).toBe(1); // an enemy's stun spends the scroll
   });
 });
 

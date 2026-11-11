@@ -32,6 +32,10 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.6
+
+- **Stopping an enemy's teleport now costs them:** if a stun or root stops your teleport, or you die while teleporting, the scroll is used up and the teleport goes on cooldown, just as if you had arrived. Stopping it yourself with the X still costs nothing. With Wayfarer Boots you keep your teleport, but the cooldown starts.
+
 ### 0.18.5
 
 - **Vexa is a little weaker:** base attack damage 36 → 33. She was winning about 59% of bot games; in testing this brings her to about 54%.

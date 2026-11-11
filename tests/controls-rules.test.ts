@@ -560,9 +560,38 @@ describe('true sight', () => {
     b.hero!.channel = { kind: 'tp', t: 3, total: 3, targetId: 0, x: 40, y: 260 } as unknown as HeroChannel;
     w.step();
     expect(b.hero!.channel).not.toBeNull();
+    b.hero!.tpCount = 2;
     w.stun(b, 1);
     w.step();
     expect(b.hero!.channel).toBeNull();
+    // Stopped by an enemy: one scroll is spent and the other waits for the cooldown.
+    expect(b.hero!.tpCount).toBe(1);
+    expect(b.hero!.tpCooldown).toBeGreaterThan(TELEPORT.cooldown - 1);
+  });
+
+  it('stopping your own teleport with the X costs nothing', () => {
+    const { w, hero } = arena(['brakk'], ['orin']);
+    const b = hero(0, 'brakk');
+    b.hero!.tpCount = 1;
+    b.hero!.channel = { kind: 'tp', t: 3, total: 3, targetId: 0, x: 40, y: 260 } as unknown as HeroChannel;
+    w.step();
+    w.applyCommand({ type: 'cancelChannel', unitId: b.id });
+    w.step();
+    expect(b.hero!.channel).toBeNull();
+    expect(b.hero!.tpCount).toBe(1);
+    expect(b.hero!.tpCooldown).toBe(0);
+  });
+
+  it('dying mid-teleport spends the scroll', () => {
+    const { w, hero } = arena(['brakk'], ['orin']);
+    const b = hero(0, 'brakk');
+    b.hero!.tpCount = 1;
+    b.hero!.channel = { kind: 'tp', t: 3, total: 3, targetId: 0, x: 40, y: 260 } as unknown as HeroChannel;
+    w.step();
+    w.dealDamage(hero(1, 'orin').id, b, 1e6, 'spell');
+    w.step();
+    expect(b.hero!.channel).toBeNull();
+    expect(b.hero!.tpCount).toBe(0);
   });
 
   it('towers give no vision; barracks, Shrine and fountain do. Only towers, fountain and sentries wear the eye', () => {

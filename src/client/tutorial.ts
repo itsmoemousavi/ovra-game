@@ -342,7 +342,7 @@ export const LESSONS: Lesson[] = [
       },
       { text: `Changed your mind? Selling gives everything back for ${SELL_REFUND_WINDOW} s, then half. Tap an item you own while the shop is open to sell it. You can shop while dead, too.` },
       { text: 'Buy away from base and the item waits on your courier, which holds 3. Tap the courier button to send it. It walks the lanes until 6:00, then flies.', spot: ['#btn-courier'] },
-      { text: `Every hero starts with a teleport. Tap it and choose an allied building. You stand still for ${TELEPORT.channel} s; only the X or a stun stops it. Wayfarer Boots give you one that is never used up.`, spot: ['#tp-slot'] },
+      { text: `Everyone starts with a teleport. Tap it, pick an allied building. You stand still for ${TELEPORT.channel} s; the X stops it for free; an enemy stun uses it up. Wayfarer Boots give you one that is never used up.`, spot: ['#tp-slot'] },
       { text: `Dying costs gold, and you wait to respawn. While you wait you may pay to buy back in at once, but only once every ${minutes(BUYBACK_COOLDOWN)}.` },
     ],
   },
