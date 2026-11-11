@@ -32,6 +32,10 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.5
+
+- **Vexa is a little weaker:** base attack damage 36 → 33. She was winning about 59% of bot games; in testing this brings her to about 54%.
+
 ### 0.18.4
 
 - **A new app icon in 3D:** the same tower split between the blue and red teams by a glowing ember crack, now made of rough stone, with team banners and a fire burning on top at night. To see it on your iPhone, remove Ovra from the home screen and add it again.

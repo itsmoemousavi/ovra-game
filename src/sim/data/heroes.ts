@@ -166,7 +166,7 @@ export const HEROES: Record<HeroId, HeroDef> = {
     manaRegen: 1.2,
     baseArmor: 2,
     armorPerLevel: 0.5,
-    baseDamage: 36,
+    baseDamage: 33,
     damagePerLevel: 3,
     attackInterval: 1.5,
     attackIntervalPerLevel: 0.025,

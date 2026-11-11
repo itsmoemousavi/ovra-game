@@ -1,7 +1,8 @@
 /**
  * Hero balance check: bots-only matches with random 3v3 lineups, then win rate and
  * average stats per hero.
- *   npx vite-node scripts/hero-winrates.ts [firstSeed] [matches]
+ *   npx vite-node scripts/hero-winrates.ts [firstSeed] [matches] [--json]
+ * --json prints one line of raw totals per hero instead of the table, so runs on several cores can be pooled.
  * A hero clearly above ~55% (or below ~45%) over many matches needs tuning.
  * Bots don't play every hero equally well, so treat this as a first signal.
  */
@@ -29,6 +30,10 @@ for (let seed = first; seed < first + count; seed++) {
     r.dmg += s.stats.heroDamage;
     rows.set(s.defId, r);
   }
+}
+if (process.argv.includes('--json')) {
+  console.log(JSON.stringify(Object.fromEntries(rows)));
+  process.exit(0);
 }
 console.log('hero     games  win%   K/D/A (avg)      hero dmg (avg)');
 for (const [id, r] of [...rows].sort((a, b) => b[1].wins / b[1].games - a[1].wins / a[1].games)) {
