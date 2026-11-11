@@ -439,7 +439,16 @@ const pingBtn = $<HTMLElement>('#btn-ping');
 /** The shield and ping buttons stand in a column to the right of the minimap, the ping menu beside them. */
 function placeMinimapButtons() {
   const mm = renderer!.minimapRect();
-  const left = mm.x + mm.size + 6;
+  // Gold frame round the minimap: 150/134 of its size, as rendered in hud-art/mmframe.png.
+  let frame = document.getElementById('mm-frame');
+  if (!frame) {
+    frame = document.createElement('div');
+    frame.id = 'mm-frame';
+    $<HTMLElement>('#app').insertBefore(frame, $<HTMLElement>('#topbar'));
+  }
+  const pad = Math.round(mm.size * (8 / 134));
+  Object.assign(frame.style, { left: `${mm.x - pad}px`, top: `${mm.y - pad}px`, width: `${mm.size + pad * 2}px`, height: `${mm.size + pad * 2}px` });
+  const left = mm.x + mm.size + pad + 6;
   const place = (sel: string, x: number, y: number) => {
     const el = $<HTMLElement>(sel);
     el.style.left = `${x}px`;

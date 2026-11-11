@@ -845,3 +845,162 @@ svg.icon { display: block; width: 100%; height: 100%; }
 #net-wait { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); z-index: 8; padding: 6px 14px; border-radius: 8px; background: rgba(8,9,8,0.82); border: 1px solid rgba(214,177,99,0.5); font-size: 13px; color: #f3dc9f; pointer-events: none; }
 #net-wait.hidden { display: none; }
 #app.net .es-again { display: none; }
+
+/* ======================================================================================
+   Laurel theme (owner's pick, 2026-11-11): dark iron, polished gold, a gold laurel wreath
+   and small rubies. The frames are 3D renders made with /hud-art.html (src/devtools/hud-art.ts)
+   and saved in src/client/hud-art/. Nothing may overlap anything else: every frame keeps
+   its own space. These rules come last on purpose and restyle the screens above.
+   ====================================================================================== */
+#root {
+  --gold: #d6b163; --gold-hi: #f3dc9f; --gold-lo: #8a6428; --iron-line: #5e4a26; --ink: #ece3cc; --ink-dim: rgba(231,226,211,0.62);
+  --iron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"), linear-gradient(180deg, #26231f, #1a1815 55%, #121110);
+  --frame: url('./hud-art/panel.png');
+  --plate: url('./hud-art/plate.png');
+  --ring: url('./hud-art/ring.png');
+  --gold-btn: linear-gradient(180deg, #f2d48a, #d3a649 50%, #9c7128);
+}
+
+/* ---------- shared pieces: framed iron panel, small plate, gold and iron buttons */
+.panel, #shop, #tp-picker, #ability-tip, #tutorial, #name-modal .box, .friend-screen, #pause .box, #practice, #draft-detail, .es-panel {
+  border: 6px solid transparent !important; border-image: var(--frame) 18 / 6px stretch !important; border-radius: 0 !important;
+  background: var(--iron) padding-box !important; box-shadow: 0 10px 34px rgba(0,0,0,0.6) !important; color: var(--ink);
+}
+#toasts div, #killfeed div, #respawn, #net-wait, #status-tip, #channel-bar, #cancel-zone, .fr-card, #shop-detail, #shop-own, .es-mvp, .draft-team .slot {
+  border: 3px solid transparent !important; border-image: var(--plate) 9 / 3px stretch !important; border-radius: 0 !important;
+  background-clip: padding-box !important;
+}
+#toasts div, #killfeed div, #net-wait, #status-tip, #respawn, #cancel-zone { background-color: rgba(18,16,13,0.92) !important; }
+#cancel-zone { background-color: rgba(110,24,20,0.85) !important; }
+#respawn { background-color: rgba(70,18,16,0.9) !important; }
+.panel-head { font-weight: 800; letter-spacing: 0.06em; color: var(--gold-hi); }
+/* gold: the main action */
+#btn-resume, #name-modal #name-save, .friend-screen button.primary, #btn-buyback, #tutorial button.on, #btn-restart, #select .menu-buttons button.primary, #draft-go:not(.ban), .es-again, #shop-act.buy {
+  color: #211603 !important; background: var(--gold-btn) !important; border: 1px solid #f6e3a6 !important; border-radius: 4px !important;
+  box-shadow: 0 0 0 1px #4a3410, inset 0 1px 0 rgba(255,255,255,0.45), 0 3px 8px rgba(0,0,0,0.5) !important;
+}
+/* iron: everything else */
+.panel-head .close, #shop-close, #tp-close, #btn-surrender, #tutorial button:not(.on), #practice button, #ping-menu button, .es-menu, #name-modal button:not(#name-save),
+.friend-screen button:not(.primary):not(.textlink):not(.locked):not(.lb-seat):not([data-v]), #select .menu-buttons button:not(.primary):not(.locked), #btn-edit-name {
+  color: var(--ink) !important; background: linear-gradient(180deg, #34302a, #1c1a16) !important; border: 1px solid var(--gold-lo) !important; border-radius: 4px !important;
+  box-shadow: inset 0 1px 0 rgba(255,236,190,0.12), 0 2px 6px rgba(0,0,0,0.45) !important;
+}
+.panel-head .close, #shop-close, #tp-close { width: 30px; height: 28px; padding: 0; display: grid; place-items: center; color: var(--gold-hi) !important; }
+#btn-surrender { color: #ffb4a8 !important; }
+#btn-surrender.confirm { color: #fff !important; background: linear-gradient(180deg, #b3322a, #6e1a17) !important; border-color: #f0a093 !important; }
+#select .menu-buttons button.locked, .friend-screen button.locked { border-radius: 4px !important; }
+#pause { background: rgba(5,4,3,0.66); }
+#pause .box { padding: 16px 22px; }
+#pause h2 { color: var(--gold-hi); letter-spacing: 0.08em; font-family: Georgia, 'Times New Roman', serif; }
+#pause button { border-radius: 4px; }
+/* segmented choices (settings, menu, lobby): iron tray, gold for the chosen one */
+.seg { background: rgba(8,7,6,0.6) !important; border: 1px solid var(--iron-line) !important; border-radius: 4px !important; padding: 2px !important; gap: 2px !important; }
+.seg button { border: 0 !important; border-radius: 3px !important; background: transparent !important; color: var(--ink-dim) !important; opacity: 1 !important; box-shadow: none !important; }
+.seg button.on, .seg button.picked { background: var(--gold-btn) !important; color: #211603 !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.4) !important; }
+.toggle { border-top-color: rgba(214,177,99,0.14) !important; }
+.toggle input, #set-zoom { accent-color: var(--gold); }
+.set-tabs button { border-radius: 0 3px 3px 0 !important; }
+input#name-input, .friend-screen input { border-radius: 3px !important; border-color: var(--gold-lo) !important; background: rgba(0,0,0,0.5) !important; }
+
+/* ---------- start menu */
+#btn-menu-settings { background: radial-gradient(circle at 50% 38%, #2c2823, #121110) !important; border: 0 !important; color: var(--gold-hi) !important; }
+#btn-menu-settings::before { content: ''; position: absolute; inset: -1px; border-radius: 50%; pointer-events: none; background: var(--ring) center / 100% 100% no-repeat; }
+.menu-opts .seg button.picked { background: var(--gold-btn) !important; }
+
+/* ---------- play with friend and the lobby */
+.friend-screen { padding: 10px 14px !important; }
+.fr-card { background-color: rgba(22,20,17,0.85) !important; }
+#lobby-panel .lb-seat { border: 1px solid var(--iron-line) !important; border-radius: 3px !important; background: rgba(10,9,8,0.55) !important; }
+#lobby-panel .lb-seat.taken { background: linear-gradient(180deg, #34302a, #1c1a16) !important; }
+#lobby-panel .lb-seat.me { border-color: var(--gold) !important; box-shadow: inset 0 0 0 1px rgba(214,177,99,0.4); }
+.cd-clock circle { stroke: var(--gold) !important; stroke-width: 2.5 !important; }
+
+/* ---------- draft */
+.draft-team .slot { background-color: #121110 !important; }
+.draft-team.t0 .slot { box-shadow: inset 3px 0 0 rgba(111,176,255,0.6) !important; }
+.draft-team.t1 .slot { box-shadow: inset -3px 0 0 rgba(255,123,127,0.6) !important; }
+.draft-team .slot.you { border-image: var(--plate) 9 / 3px stretch !important; outline: 1px solid rgba(243,217,139,0.7); outline-offset: -4px; }
+.draft-team .slot.now { animation: slotglow 0.8s infinite alternate; }
+.dh { border-radius: 3px !important; border-color: var(--gold-lo) !important; }
+.dh.can { border-color: rgba(243,217,139,0.7) !important; }
+.dh.sel { border-color: var(--gold-hi) !important; }
+.draft-team .bx { border-radius: 2px; }
+#draft-detail { padding: 4px 8px 4px 4px !important; }
+
+/* ---------- end of match */
+.es-mvp { background-color: #100f0d !important; }
+.es-body td.hn .pf { border-radius: 3px !important; border-color: var(--gold-lo) !important; }
+.es-chips button { border-radius: 3px !important; }
+
+/* ---------- shop */
+#shop { padding: 4px 6px 6px !important; }
+.shop-item { border-radius: 3px !important; border-color: var(--iron-line) !important; background: rgba(8,7,6,0.5) !important; }
+.shop-item.picked { border-color: var(--gold-hi) !important; background: rgba(214,177,99,0.14) !important; }
+.shop-item i, .d-top i, .d-row .part, #shop-own button { border-radius: 2px !important; }
+#shop-act.sell { border-radius: 4px !important; }
+#shop-drop { border-radius: 4px !important; }
+.shop-head .gold { border-radius: 3px !important; border-color: var(--iron-line) !important; }
+
+/* ---------- small things in the match */
+#tp-picker { padding: 6px !important; }
+#ping-menu button { text-align: left; }
+#practice b { color: var(--gold-hi); }
+#tutorial .tut-list button:not(.on) { background: rgba(10,9,8,0.55) !important; }
+#tutorial { border-color: transparent !important; }
+#channel-bar { background-color: rgba(10,9,8,0.9) !important; }
+#score-body td, #score-body th { border-top-color: rgba(214,177,99,0.14) !important; }
+#score-body tr.me td, .es-body tr.me td { background: rgba(243,217,139,0.09) !important; }
+#score-body .items i, .es-body td.its i { border-radius: 2px !important; }
+#stats-body div { border-top-color: rgba(214,177,99,0.12) !important; }
+
+/* ---------- the HUD */
+/* Bottom panel: iron with a gold rim. More padding so items keep clear of the rim. */
+#hud-panel { padding: 11px 60px 11px 10px; background: var(--iron) padding-box; border: 1px solid transparent; border-image: var(--frame) 18 / 6px stretch; border-radius: 0; box-shadow: 0 -2px 14px rgba(0,0,0,0.55); -webkit-backdrop-filter: none; backdrop-filter: none; }
+/* Portrait: a laurel medallion. The face shrinks to fit inside it; the bars move right to keep clear. */
+#herobar { gap: 20px; margin-left: 2px; }
+#portrait { border: 0 !important; background: none !important; }
+#portrait::before { content: ''; position: absolute; inset: -15.8%; pointer-events: none; background: url('./hud-art/medallion.png') center / 100% 100% no-repeat; }
+#portrait .face { inset: 11.4%; background: #14171a; }
+#portrait #level { bottom: 1%; min-width: 20px; height: 20px; line-height: 18px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffe7a3, #c4913d 60%, #6b4a1c); border: 1px solid #2a1d0b; color: #1c1307; z-index: 1; }
+#portrait i { right: 1%; bottom: 1%; background: radial-gradient(circle at 50% 38%, #2c2823, #121110); border-color: var(--gold); color: var(--gold-hi); z-index: 1; }
+@container (max-width: 720px) { #herobar { gap: 12px; } }
+/* Bars sunk into the iron with a thin gold line. */
+.bar { background: #070605; border-radius: 2px; box-shadow: inset 0 1px 3px #000, 0 0 0 1px var(--iron-line); }
+.bar.hp > div { background: linear-gradient(#6fdc78, #2f9a3e 55%, #1f6e2b); }
+.bar.mana > div { background: linear-gradient(#6d9dff, #2d5fd6 55%, #1b3f99); }
+.bar.xp { box-shadow: 0 0 0 1px #3a2c15; } .bar.xp > div { background: linear-gradient(#ffe29a, #c8963e); }
+#kda { color: #e3d6b4; }
+#pstats b { color: #ffd77a; }
+/* Item slots: sunken iron sockets with a gold lip. State colours (usable, selling, picked...) still win. */
+#itembar button { border: 1px solid #9a7638; border-radius: 3px; background-color: #15130f; }
+#itembar .item.empty, #itembar #courier-slots .cslot.empty { background: url('./hud-art/slot.png') 0 0 / 100% 100% no-repeat; border-color: transparent; border-style: solid; }
+#itembar #courier-slots .cslot { border-radius: 3px; border-color: #9a7638; background-color: #1f1a24; }
+#courier-slots { border-left-color: rgba(214,177,99,0.3); }
+#itembar .tp { border-color: #9a7638; }
+#itembar .item .cd, #itembar .tp .cd, #itembar .tp.channel::after { border-radius: 2px; }
+#btn-courier { border-radius: 3px !important; border-color: #9a7638 !important; }
+#btn-courier.ready { border-color: #ffd23f !important; } #btn-courier.out { border-color: #4ade80 !important; }
+/* Shop: centred under the courier button, its bottom level with the lower row of items. */
+#btn-shop { right: calc(var(--slot) / 2 - 4px); bottom: calc(var(--slot) / 2 - 9px); border-color: transparent; background: radial-gradient(circle at 50% 38%, #2c2823, #121110); }
+/* Round buttons: the same gold rim drawn just inside their edge. */
+.ability::before, #btn-attack::before, #btn-shop::before, #btn-glyph::before, #btn-ping::before, #btn-pause::before, #btn-settings::before {
+  content: ''; position: absolute; inset: -1px; z-index: 3; border-radius: 50%; pointer-events: none; background: var(--ring) center / 100% 100% no-repeat;
+}
+.ability.passive::before { display: none; }
+#actions .ability:not(.passive) { border-color: transparent; }
+#btn-attack { border-color: transparent !important; background: radial-gradient(circle at 50% 40%, #a3332e, #6e1a17 70%) !important; }
+.ability { background: #15130f; }
+#btn-glyph, #btn-ping, #btn-pause, #btn-settings { border-color: transparent; background: radial-gradient(circle at 50% 38%, #2c2823, #121110); color: var(--gold-hi); }
+#btn-ping.armed { background: radial-gradient(circle at 50% 38%, #f6b443, #b06d0a); }
+/* Top bar: iron plates with gold rims and room around the heroes; square hero pictures; the clock is a gold medallion. */
+#topbar .team, #topbar .tb-heroes { height: calc(var(--tb) + 14px); background: var(--iron) padding-box; border-radius: 0 !important; }
+#topbar .team { min-width: 46px; border: 1px solid transparent; border-image: var(--plate) 9 / 3px stretch; }
+#topbar .tb-heroes { gap: 6px; padding-left: 8px; padding-right: 8px; border-top: 1px solid transparent; border-bottom: 1px solid transparent; border-image: var(--plate) 9 / 3px 0 stretch; }
+#tb-heroes-0 { padding-right: 14px; } #tb-heroes-1 { padding-left: 14px; }
+.tb-hero .pic { border-radius: 3px; border-width: 2px; box-shadow: 0 0 0 1px #000; }
+.tb-hero img { transform: scale(1.05); }
+#clock-disc { background: url('./hud-art/clock.png') center / 100% 100% no-repeat; border: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+#clock-disc i { background: rgba(224,179,90,0.6); }
+#clock { color: #f4e6c2; }
+/* Minimap frame (placed by main.ts around the minimap); the shield and ping buttons sit clear of it. */
+#mm-frame { position: absolute; pointer-events: none; background: url('./hud-art/mmframe.png') 0 0 / 100% 100% no-repeat; }

@@ -9,6 +9,7 @@ The version you're playing is shown in **Settings → View** in the game.
 
 | Version | Milestone | Date |
 |---|---|---|
+| [0.18.x](#018x--the-laurel-look) | The Laurel look | 2026-11-11 |
 | [0.17.x](#017x--new-sounds) | New sounds | 2026-11-06 |
 | [0.16.x](#016x--play-with-friend) | Play with Friend | 2026-11-06 |
 | [0.15.x](#015x--a-real-start-and-finish) | A real start and finish | 2026-11-05 |
@@ -29,7 +30,19 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ---
 
-## 0.17.x · New sounds
+## 0.18.x · The Laurel look
+
+### 0.18.0
+
+- **A new look for the whole game:** dark iron, polished gold, a gold laurel wreath and small rubies. Every frame was sculpted in 3D and lit, so the metal really shines.
+- **Your hero's picture sits in a gold laurel medallion.** The picture is a little smaller to make room, and the health and mana bars moved right so nothing touches.
+- **The bottom panel** has a gold rim with a ruby in each corner and more room inside, so items keep clear of the edge. Item slots are sunken iron sockets.
+- **The shop button** now sits neatly under the courier button, level with the lower row of items.
+- **Top bar:** taller iron plates with space around each hero, square hero pictures, and a gold medallion for the clock.
+- **The minimap** has a gold frame. The shield and ping buttons moved a little to the right to keep clear of it.
+- **Spell, Attack and other round buttons** all have the same gold rim. Same size and place as before.
+- **Every other screen matches:** start menu, Play with Friend and the lobby, the draft, settings, the shop, scoreboard, hero stats, pause, teleport map, ping menu, tutorial, practice, spell cards, messages and the end screen.
+
 
 ### 0.17.13
 
