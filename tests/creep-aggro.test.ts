@@ -127,7 +127,6 @@ describe('lane creeps', () => {
     w.applyCommand({ type: 'stop', unitId: v.id });
     w.applyCommand({ type: 'setAutoAttack', unitId: v.id, enabled: false });
     place(v, X + 25, Y);
-    v.vx = 0;
     run(w, CREEP_CHASE + 0.3);
     expect(e.targetId).not.toBe(v.id);
     run(w, 4);
