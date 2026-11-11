@@ -8,8 +8,9 @@ how we work, what the owner decided, and what is still open. Details live in
 
 Mobile 3v3 lane-strategy game in the spirit of Dota 2 (original names and art, no Dota assets).
 Name: **Ovra** (an invented word with no meaning, like "Dota"; was Shrinefall, then briefly Emberwake, renamed 2026-11-04
-because Emberwake was taken). Icon: split blue/red tower with an ember crack (`public/icon.svg`;
-PNGs rendered from it with headless Chromium; 1024 px store version in `docs/icon-1024.png`).
+because Emberwake was taken). Icon: a weathered round stone tower split blue/red by a glowing ember crack, team banners, a brazier fire, at night
+(3D, owner approved 2026-11-11; sculpted in `src/devtools/icon-art.ts`, open `/icon-art.html`, `window.iconPng(size)`;
+PNGs in `public/`, 1024 px store version in `docs/icon-1024.png`). They rejected a toy-like brick tower and gold emblems.
 Destroy towers → barracks → shrine towers → the enemy **Shrine**. Empty slots are bots.
 Offline vs bots for now; multiplayer and app-store release later (Capacitor planned).
 
