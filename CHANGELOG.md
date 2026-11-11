@@ -32,6 +32,16 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.7
+
+- **Lane creeps pick their targets more cleverly:**
+  - They go for the closest enemy: heroes and creeps first, then buildings, then wards.
+  - Hitting a creep no longer decides who it attacks.
+  - Creeps hitting a building turn on any enemy hero or creep that steps into their attack range. To save a tower, walk up to the creeps attacking it.
+  - **Pulling creeps:** tap an enemy hero (or aim at one with the Attack arrow) and the enemy creeps near you turn on you, unless another unit is closer to them. This works once every 3 seconds. Auto attack doesn't do it.
+  - Creeps pulled from out of their range chase you for at most 2.3 seconds. If you vanish into the fog, they look where they last saw you. Then they walk back to the spot where they left their lane.
+  - When nothing else is near, creeps attack enemy wards they can see (with true sight for hidden wards). They need many hits to kill one; heroes still need 2.
+
 ### 0.18.6
 
 - **Stopping an enemy's teleport now costs them:** if a stun or root stops your teleport, or you die while teleporting, the scroll is used up and the teleport goes on cooldown, just as if you had arrived. Stopping it yourself with the X still costs nothing. With Wayfarer Boots you keep your teleport, but the cooldown starts.

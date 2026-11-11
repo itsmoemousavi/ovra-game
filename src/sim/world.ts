@@ -133,6 +133,15 @@ export interface AbilityState {
 const SUNDER_SECONDS = 4;
 /** A single attack tap this close to the swing being ready still counts (fingers aren't perfect). */
 const ONCE_GRACE = 0.1;
+/**
+ * Lane creeps (owner, 2026-11-11). Ordering an attack on an enemy hero pulls the enemy creeps near
+ * you onto you, once every CREEP_AGGRO_COOLDOWN seconds; auto attack doesn't. Pulled from outside
+ * their sight range they chase for CREEP_CHASE seconds at most.
+ */
+export const CREEP_AGGRO_COOLDOWN = 3;
+export const CREEP_CHASE = 2.3;
+/** A creep that lost its puller in the fog looks for it this long before going back to the lane. */
+const CREEP_SEARCH = 3;
 /** Morra's wolves: how far they stray from her. Red Wolf: her reach while she's melee. */
 const SUMMON_LEASH = 14;
 const ATTACK_TOWER_REVEAL = 3;
@@ -270,6 +279,8 @@ export interface HeroState {
   /** Hero kills since this hero last died. */
   streak: number;
   lastPingAt: number;
+  /** Last time this hero's attack order pulled enemy lane creeps (see CREEP_AGGRO_COOLDOWN). */
+  creepAggroAt: number;
   /** Kills in quick succession (multi-kills) and when the last one happened. */
   multi: number;
   lastKillAt: number;
@@ -339,6 +350,16 @@ export interface CreepState {
   super: boolean;
   /** All enemy barracks are down: a Mega Creep. */
   mega: boolean;
+  /** The hero that pulled this creep with an attack order, and when. */
+  aggroId?: number | null;
+  aggroAt?: number;
+  /** Where the puller was last seen, and when (the creep searches there if it goes into fog). */
+  seenX?: number;
+  seenY?: number;
+  seenAt?: number;
+  /** Where the creep left its lane to chase; it walks back here afterwards. */
+  backX?: number | null;
+  backY?: number;
 }
 
 export interface StructureState {
@@ -708,15 +729,22 @@ export class World {
         const t = this.unit(cmd.targetId);
         // Steering: that target simply comes first while it stays in range.
         if (cmd.priority && h.order.type === 'dir') {
-          if (this.canAttack(u, t) && this.canSee(u.team, t)) u.targetId = t.id;
+          if (this.canAttack(u, t) && this.canSee(u.team, t)) {
+            u.targetId = t.id;
+            this.pullCreeps(u, t);
+          }
           break;
         }
-        if ((this.canAttack(u, t) && this.canSee(u.team, t)) || this.canDeny(u, t)) h.order = { type: 'attack', leash: cmd.priority, targetId: cmd.targetId };
+        if ((this.canAttack(u, t) && this.canSee(u.team, t)) || this.canDeny(u, t)) {
+          h.order = { type: 'attack', leash: cmd.priority, targetId: cmd.targetId };
+          this.pullCreeps(u, t);
+        }
         break;
       }
       case 'attackNearest': {
         const t = this.pickAutoTarget(u);
         h.order = t ? { type: 'attack', targetId: t.id } : { type: 'idle' };
+        if (t) this.pullCreeps(u, t);
         break;
       }
       case 'setAutoAttack':
@@ -750,6 +778,7 @@ export class World {
         if (!t || !((this.canAttack(u, t) && this.canSee(u.team, t)) || this.canDeny(u, t))) break;
         if (h.order.type === 'dir') h.onceTarget = t.id;
         else h.order = { type: 'attackOnce', targetId: t.id };
+        this.pullCreeps(u, t);
         break;
       }
       case 'stop':
@@ -1005,6 +1034,7 @@ export class World {
       goldEarned: 0,
       streak: 0,
       lastPingAt: -99,
+      creepAggroAt: -99,
       multi: 0,
       lastKillAt: -99,
       stats: { heroDamage: 0, buildingDamage: 0, healing: 0, damageTaken: 0 },
@@ -1442,17 +1472,24 @@ export class World {
 
   private updateCreep(u: Unit) {
     const c = u.creep!;
+    if (c.aggroId != null && this.chasePuller(u)) return;
     let t = this.unit(u.targetId);
     if (!this.canAttack(u, t) || !this.canSee(u.team, t) || dist(u.x, u.y, t.x, t.y) > u.acquireRange + 4) t = undefined;
-    if (!t) {
-      t = this.enemiesNear(u, u.x, u.y, u.acquireRange, (e) => e.kind !== 'neutral' && e.kind !== 'ward' && this.canSee(u.team, e)).sort(
-        (a, b) => dist(u.x, u.y, a.x, a.y) - dist(u.x, u.y, b.x, b.y),
-      )[0];
-    }
+    // Hitting a building or a ward: a hero or creep stepping into attack range comes first.
+    if (t && (t.structure || t.ward)) t = this.creepTarget(u, true) ?? t;
+    if (!t) t = this.creepTarget(u, false);
     u.targetId = t ? t.id : null;
     if (t) {
       if (!this.tryAttack(u, t)) this.steerTo(u, t.x, t.y);
       return;
+    }
+    // After a chase: back to the spot where it left the lane, then on along the lane.
+    if (c.backX != null) {
+      if (dist(u.x, u.y, c.backX, c.backY!) > 2.5) {
+        this.steerTo(u, c.backX, c.backY!);
+        return;
+      }
+      c.backX = null;
     }
     // March along the lane.
     while (c.wp < c.path.length && dist(u.x, u.y, c.path[c.wp].x, c.path[c.wp].y) < 2.5) c.wp++;
@@ -1463,6 +1500,83 @@ export class World {
     const shrine = c.wp === c.path.length - 1 ? this.findStructure(otherTeam(u.team as Team), 'shrine')[0] : undefined;
     const goal = shrine && dist(wp.x, wp.y, shrine.x, shrine.y) < 1 ? this.nearestAttackableBuilding(u) : wp;
     if (goal) this.steerTo(u, goal.x, goal.y);
+  }
+
+  /**
+   * A lane creep's pick: the closest enemy it can see. Heroes and creeps come first, then buildings,
+   * then wards. Among heroes about equally close, one attacking the creep's side comes first.
+   * `touching`: only heroes and creeps already within attack range.
+   */
+  private creepTarget(u: Unit, touching: boolean): Unit | undefined {
+    const rank = (e: Unit) => (e.structure ? 1 : e.ward ? 2 : 0);
+    let best: Unit | undefined;
+    let bestKey = Infinity;
+    for (const e of this.enemiesNear(u, u.x, u.y, u.acquireRange, (e) => e.kind !== 'neutral' && this.canSee(u.team, e))) {
+      if (touching && (rank(e) > 0 || !this.inReach(u, e))) continue;
+      const hostile = e.hero && this.unit(e.targetId)?.team === u.team ? 1 : 0;
+      const key = rank(e) * 1e6 + dist(u.x, u.y, e.x, e.y) - hostile;
+      if (key < bestKey) {
+        best = e;
+        bestKey = key;
+      }
+    }
+    return best;
+  }
+
+  /**
+   * Hero `u` ordered an attack on enemy hero `t`: every enemy lane creep that has `u` within its
+   * sight range turns on `u`, unless another hero or creep stands clearly closer to it.
+   */
+  private pullCreeps(u: Unit, t: Unit) {
+    const h = u.hero;
+    if (!h || !t.hero || t.team === u.team || this.time - h.creepAggroAt < CREEP_AGGRO_COOLDOWN) return;
+    h.creepAggroAt = this.time;
+    for (const cr of this.units) {
+      const c = cr.creep;
+      if (!c || !cr.alive || cr.team === u.team || !this.canAttack(cr, u) || !this.canSee(cr.team, u)) continue;
+      const d = dist(cr.x, cr.y, u.x, u.y);
+      if (d - u.radius > cr.acquireRange) continue;
+      const closer = this.enemiesNear(cr, cr.x, cr.y, d - 1, (e) => e !== u && (e.kind === 'hero' || e.kind === 'creep') && this.canSee(cr.team, e));
+      if (closer.length) continue;
+      if (c.aggroId == null && c.backX == null) {
+        c.backX = cr.x;
+        c.backY = cr.y;
+      }
+      c.aggroId = u.id;
+      c.aggroAt = this.time;
+      c.seenX = u.x;
+      c.seenY = u.y;
+      c.seenAt = this.time;
+      cr.targetId = u.id;
+    }
+  }
+
+  /** A creep chasing the hero that pulled it. Returns false once the chase is over. */
+  private chasePuller(u: Unit): boolean {
+    const c = u.creep!;
+    const a = this.unit(c.aggroId);
+    const stop = () => {
+      c.aggroId = null;
+      u.targetId = null;
+      return false;
+    };
+    if (!this.canAttack(u, a)) return stop();
+    // Another hero or creep stepping right up to it takes over.
+    if (this.creepTarget(u, true) && !this.inReach(u, a)) return stop();
+    if (this.canSee(u.team, a)) {
+      c.seenX = a.x;
+      c.seenY = a.y;
+      c.seenAt = this.time;
+      if (dist(u.x, u.y, a.x, a.y) - a.radius > u.acquireRange && this.time - c.aggroAt! > CREEP_CHASE) return stop();
+      u.targetId = a.id;
+      if (!this.tryAttack(u, a)) this.steerTo(u, a.x, a.y);
+      return true;
+    }
+    // Lost in the fog: walk to where it was last seen, then give up.
+    if (dist(u.x, u.y, c.seenX!, c.seenY!) < 1.5 || this.time - c.seenAt! > CREEP_SEARCH) return stop();
+    u.targetId = null;
+    this.steerTo(u, c.seenX!, c.seenY!);
+    return true;
   }
 
   private nearestAttackableBuilding(u: Unit): Unit | undefined {
@@ -1888,10 +2002,11 @@ export class World {
     if (target.structure && dealer?.summon) raw *= SUMMON_BUILDING_MULT;
     // Nothing from outside the Warden's house hurts it (spells and arrows included).
     if (target.neutral?.boss && src && src !== target && !inHouse(this.map, src.x, src.y)) return;
-    // Wards ignore spells and splash; every direct attack takes exactly half, so two hits kill one.
+    // Wards ignore spells and splash; every direct attack from a hero takes exactly half, so two
+    // hits kill one. Lane creeps chip them down with their own damage.
     if (target.ward) {
       if (kind !== 'attack' || opts.cleave || opts.dot) return;
-      raw = target.maxHp / 2;
+      if (!dealer?.creep) raw = target.maxHp / 2;
     }
     let amount = target.ward ? raw : kind === 'attack' ? raw * armorMultiplier(this.armorOf(target)) : raw;
     if (kind === 'spell' && src?.hero && !opts.reflect) amount *= 1 + src.hero.bonus.spellAmpPct / 100;
