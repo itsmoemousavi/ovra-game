@@ -32,6 +32,10 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.2
+
+- **The Attack and spell buttons moved further right:** twice as far as in 0.18.1, so they now sit close to the edge of the screen.
+
 ### 0.18.1
 
 - **The Attack button, the spell buttons and their level-up buttons moved a little to the right,** so they have more space from the bottom panel.
