@@ -31,6 +31,10 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.17.x · New sounds
 
+### 0.17.13
+
+- **Behind the scenes:** the README (the project's front page on GitHub) now describes the game as it is today: Play with Friend, the announcer, the new tutorial, mountains, Mega Creeps, the settings sections and the current controls.
+
 ### 0.17.12
 
 - **The tutorial puts you in better places.** Fighting practice now happens in an open clearing in the jungle instead of between trees, and you always stand with open ground around you.
