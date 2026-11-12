@@ -54,10 +54,35 @@ export const SUMMONS: Record<'wolf', CombatStats> = {
   wolf: { hp: 240, armor: 1, damage: 18, attackInterval: 1, attackRange: 1.2, projectileSpeed: 0, moveSpeed: 8, radius: 0.7, acquireRange: 10, bountyGold: 20, bountyXp: 25, vision: [10, 8] },
 };
 
-/** Multiplier applied to creeps of a lane whose enemy barracks has fallen. */
-export const SUPER_CREEP_MULT = { hp: 1.6, damage: 1.6, gold: 0.6 };
-/** All six enemy barracks down: every creep of that team is a Mega Creep. Replaces the multiplier above. */
-export const MEGA_CREEP_MULT = { hp: 3.2, damage: 3, gold: 0.4 };
+/**
+ * Stronger lane creeps, modelled on the reference game's lane creeps.
+ * `super`: this creep type of a lane whose enemy barracks of that type has fallen.
+ * `mega`: all six enemy barracks down; replaces `super`.
+ * `gold` multiplies the normal creep's bounty.
+ */
+export const POWERED_CREEPS: Record<'super' | 'mega', Record<'melee' | 'ranged', { hp: number; damage: number; armor: number; gold: number }>> = {
+  super: {
+    melee: { hp: 700, damage: 40, armor: 3, gold: 0.6 },
+    ranged: { hp: 475, damage: 44, armor: 1, gold: 0.6 },
+  },
+  mega: {
+    melee: { hp: 1270, damage: 100, armor: 3, gold: 0.4 },
+    ranged: { hp: 1015, damage: 86, armor: 1, gold: 0.4 },
+  },
+};
+
+/**
+ * Lane creeps get a small upgrade every 7.5 minutes (only new waves, never creeps already walking),
+ * like the reference game: a little health and damage, 1 more gold. Capped at `max` upgrades.
+ */
+export const CREEP_UPGRADE = {
+  interval: 450,
+  max: 30,
+  normal: { hp: 12, damage: 1 },
+  /** Super and Mega creeps grow a bit faster. */
+  powered: { hp: 19, damage: 2 },
+  gold: 1,
+};
 
 const tower = (hp: number, damage: number): CombatStats => ({
   hp,

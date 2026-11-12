@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import './style.css';
-import { BotDifficulty, DRAFT_TIME, DT, Draft, DraftStep, HeroId, LANE_IDS, LaneId, PlayerSlot, Team, WARMUP_SECONDS, World, XP_TABLE } from '../sim';
+import { BotDifficulty, DRAFT_TIME, DT, Draft, DraftStep, HeroId, LANE_IDS, LaneId, PlayerSlot, Team, WARMUP_SECONDS, World, XP_TABLE, MAX_LEVEL } from '../sim';
 import { DraftUi } from './draft-ui';
 import { Hud, heroCards, heroPortraits } from './hud';
 import { Input } from './input';
@@ -869,7 +869,7 @@ practicePanel.querySelectorAll<HTMLElement>('[data-cheat]').forEach((b) =>
     const h = me.hero;
     switch (b.dataset.cheat) {
       case 'level':
-        if (h.level < 15) world.giveXp(me, XP_TABLE[h.level] - h.xp);
+        if (h.level < MAX_LEVEL) world.giveXp(me, XP_TABLE[h.level] - h.xp);
         break;
       case 'gold':
         h.gold += 1000;

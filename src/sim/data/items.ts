@@ -43,7 +43,14 @@ export type ItemId =
   | 'mireStaff'
   | 'wayfarerBoots'
   | 'manaFlask'
-  | 'longScope';
+  | 'longScope'
+  | 'worldbreaker'
+  | 'warStandard'
+  | 'bulwarkOfAges'
+  | 'astralScepter'
+  | 'tempestBlade'
+  | 'phantomMantle'
+  | 'silencePike';
 
 export interface ItemStats {
   damage?: number;
@@ -76,6 +83,10 @@ export interface ItemStats {
   sunderArmor?: number;
   /** Chance (%) for an attack to throw lightning at the target and enemies near it. */
   chainChance?: number;
+  /** How many enemies near the target the lightning also jumps to (2 unless an item says more). */
+  chainTargets?: number;
+  /** Abilities cost this % less mana. */
+  manaCostPct?: number;
   /** Your attacks deal this % more to buildings. */
   buildingDamagePct?: number;
   /** Extra attack range in meters, ranged heroes only. */
@@ -89,6 +100,12 @@ export interface ItemAura {
   radius: number;
   armor: number;
   hpRegen: number;
+  /** Auras with the same key don't stack: the strongest one counts (Banner of Valor and War Standard). */
+  key: string;
+  /** Extra attack damage. */
+  damage?: number;
+  /** Allied lane creeps near the holder get the aura too, and hit buildings this % harder. */
+  creepBuildingDamagePct?: number;
 }
 
 export interface ItemDef {
@@ -107,7 +124,7 @@ export interface ItemDef {
    */
   recipe?: ItemId[];
   /** Item with a button. */
-  active?: { kind: 'blink' | 'immunity' | 'manaBurst' | 'frostNova' | 'stoneskin' | 'silence' | 'teamHeal' | 'vanish' | 'mire'; cooldown: number; range?: number; duration?: number; amount?: number };
+  active?: { kind: 'blink' | 'immunity' | 'manaBurst' | 'frostNova' | 'stoneskin' | 'silence' | 'teamHeal' | 'vanish' | 'mire' | 'bulwark'; cooldown: number; range?: number; duration?: number; amount?: number };
   aura?: ItemAura;
   /** What the button does, for an item you can use. */
   use?: string;
@@ -116,7 +133,9 @@ export interface ItemDef {
   /** Not sold in the shop and can't be sold back (the Warden's revive charm). */
   noShop?: boolean;
   /** Shop tab, when what it does matters more than the stats it gives. */
-  tab?: 'attack' | 'defense' | 'magic' | 'upgrade';
+  tab?: 'attack' | 'defense' | 'magic' | 'upgrade' | 'legendary';
+  /** Blink items: turn invisible for this many seconds after blinking (Phantom Mantle). */
+  blinkVeil?: number;
 }
 
 export const ITEMS: Record<ItemId, ItemDef> = {
@@ -393,7 +412,7 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     icon: '#f59e0b',
     stats: { hp: 200, armor: 2 },
     recipe: ['guardPlate', 'vitalStone'],
-    aura: { radius: 12, armor: 4, hpRegen: 3 },
+    aura: { key: 'valor', radius: 12, armor: 4, hpRegen: 3 },
     passive: "You and allied heroes within 12 m get +4 armor and +3 health regen. Auras of the same kind don't stack.",
   },
   // ---- actives
@@ -510,6 +529,93 @@ export const ITEMS: Record<ItemId, ItemDef> = {
     active: { kind: 'mire', cooldown: 18, range: 9, duration: 3.5, amount: 50 },
     tab: 'magic',
     use: "Tap the item, then an enemy within 9 m: 50 damage and 60% slower for 3.5 s.",
+  },
+  // ---- legendary: built from two finished items, for the late game
+  worldbreaker: {
+    id: 'worldbreaker',
+    name: 'Worldbreaker',
+    short: 'Breaker',
+    cost: 5000,
+    icon: '#b45309',
+    stats: { damage: 75, critChance: 30, critMult: 2.3, buildingDamagePct: 100 },
+    recipe: ['siegeMaul', 'reaperEdge'],
+    tab: 'legendary',
+    passive: "A critical hit deals 230% damage (not on buildings). Your attacks deal double damage to buildings.",
+  },
+  warStandard: {
+    id: 'warStandard',
+    name: 'War Standard',
+    short: 'Standard',
+    cost: 4500,
+    icon: '#f59e0b',
+    stats: { hp: 400, armor: 4, mana: 250, manaRegen: 2 },
+    recipe: ['bannerOfValor', 'mendersCenser'],
+    aura: { key: 'valor', radius: 14, armor: 6, hpRegen: 6, damage: 15, creepBuildingDamagePct: 50 },
+    active: { kind: 'teamHeal', cooldown: 30, range: 12, amount: 350 },
+    tab: 'legendary',
+    passive: "You, allied heroes and your lane creeps within 14 m get +6 armor, +6 health regen and +15 attack damage. Those creeps hit buildings 50% harder. Doesn't stack with Banner of Valor.",
+    use: "You and allied heroes within 12 m heal 350 health.",
+  },
+  bulwarkOfAges: {
+    id: 'bulwarkOfAges',
+    name: 'Bulwark of Ages',
+    short: 'Bulwark',
+    cost: 4700,
+    icon: '#7f1d1d',
+    stats: { hp: 850, armor: 8, hpRegen: 8, thornsPct: 40 },
+    recipe: ['titanHeart', 'brambleMail'],
+    active: { kind: 'bulwark', cooldown: 45, duration: 5, amount: 50 },
+    tab: 'legendary',
+    passive: "Melee attackers take 40% of the damage they deal to you.",
+    use: "Take 50% less damage for 5 s.",
+  },
+  astralScepter: {
+    id: 'astralScepter',
+    name: 'Astral Scepter',
+    short: 'Scepter',
+    cost: 5500,
+    icon: '#7c3aed',
+    stats: { hp: 300, mana: 750, manaRegen: 4, spellAmpPct: 32, spellLifestealPct: 20, cdrPct: 15, manaCostPct: 25 },
+    recipe: ['archmageStaff', 'soulChalice'],
+    tab: 'legendary',
+    passive: "Ability damage heals you for 20% of it, 7% against creeps and monsters.",
+  },
+  tempestBlade: {
+    id: 'tempestBlade',
+    name: 'Tempest Blade',
+    short: 'Tempest',
+    cost: 5000,
+    icon: '#a5b4fc',
+    stats: { damage: 65, attackSpeedPct: 60, chainChance: 30, chainTargets: 4 },
+    recipe: ['stormBlade', 'twinBlades'],
+    tab: 'legendary',
+    passive: "30% of attacks throw lightning: 80 damage to the target and up to 4 enemies near it. Not on buildings.",
+  },
+  phantomMantle: {
+    id: 'phantomMantle',
+    name: 'Phantom Mantle',
+    short: 'Mantle',
+    cost: 5000,
+    icon: '#6366f1',
+    stats: { hp: 350, attackSpeedPct: 30, damage: 20 },
+    recipe: ['shadowStep', 'ghostShroud'],
+    active: { kind: 'blink', cooldown: 10, range: 15 },
+    blinkVeil: 2,
+    tab: 'legendary',
+    use: "Tap the ground to blink up to 15 m, then stay invisible for 2 s (attacking or casting ends it). Can't be used for 3 s after taking damage from a hero.",
+  },
+  silencePike: {
+    id: 'silencePike',
+    name: 'Silence Pike',
+    short: 'Silence',
+    cost: 4500,
+    icon: '#a78bfa',
+    stats: { damage: 45, armor: 6, mana: 250, sunderArmor: 8 },
+    recipe: ['hushBell', 'sunderPike'],
+    active: { kind: 'silence', cooldown: 25, range: 9, duration: 4 },
+    tab: 'legendary',
+    passive: "Your attacks lower the target's armor by 8 for 4 s. Doesn't stack.",
+    use: "Enemy heroes within 9 m can't cast abilities for 4 s.",
   },
   wardenCharm: {
     id: 'wardenCharm',

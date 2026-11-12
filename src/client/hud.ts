@@ -19,6 +19,7 @@ import {
   buybackBlocker,
   buybackCost,
   castBlocker,
+  manaCostOf,
   isNight,
   maxAbilityLevel,
 } from '../sim';
@@ -206,7 +207,7 @@ export class Hud {
       const blocker = castBlocker(me, i);
       const canLearn = h.skillPoints > 0 && st.level < maxAbilityLevel(a, h.level);
       const cd = Math.ceil(st.cooldown);
-      const cost = a.manaCost[Math.max(0, st.level - 1)];
+      const cost = manaCostOf(me, a, st.level);
       // Short of mana shows even while the spell is cooling down, so you know before it's ready.
       const lowMana = st.level > 0 && a.targeting !== 'passive' && me.mana < cost;
       const key = `${st.level}|${blocker}|${cd}|${canLearn}|${lowMana}`;

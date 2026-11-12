@@ -367,12 +367,22 @@ function useItems(w: World, me: Unit, target: Unit, d: number): boolean {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: stone });
     return true;
   }
+  const bulwark = slotOf('bulwarkOfAges');
+  if (ready(bulwark) && target.hero && d < 8 && me.hp < me.maxHp * 0.6) {
+    w.applyCommand({ type: 'useItem', unitId: me.id, slot: bulwark });
+    return true;
+  }
+  const pike = slotOf('silencePike');
+  if (ready(pike) && target.hero && d < 8.5) {
+    w.applyCommand({ type: 'useItem', unitId: me.id, slot: pike });
+    return true;
+  }
   const hush = slotOf('hushBell');
   if (ready(hush) && target.hero && d < 6.5) {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: hush });
     return true;
   }
-  const censer = slotOf('mendersCenser');
+  const censer = Math.max(slotOf('mendersCenser'), slotOf('warStandard'));
   if (ready(censer) && w.heroes.some((a) => a.alive && a.team === me.team && a.hp < a.maxHp * 0.55 && dHypot(a.x - me.x, a.y - me.y) < 9)) {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: censer });
     return true;
@@ -387,8 +397,9 @@ function useItems(w: World, me: Unit, target: Unit, d: number): boolean {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: boots });
     return true;
   }
-  const step = slotOf('shadowStep');
-  if (step >= 0 && target.hero && d > me.attackRange + 3 && d < 12 && me.hp > me.maxHp * 0.6 && !itemBlocker(w, me, step)) {
+  const step = Math.max(slotOf('shadowStep'), slotOf('phantomMantle'));
+  const stepRange = step >= 0 ? (ITEMS[h.items[step]!.id].active?.range ?? 11) + 1 : 0;
+  if (step >= 0 && target.hero && d > me.attackRange + 3 && d < stepRange && me.hp > me.maxHp * 0.6 && !itemBlocker(w, me, step)) {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: step, x: target.x, y: target.y });
     return true;
   }

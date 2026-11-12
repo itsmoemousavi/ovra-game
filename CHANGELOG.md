@@ -32,6 +32,14 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.18.x · The Laurel look
 
+### 0.18.8
+
+- **Lane creeps no longer get tough late in the match.** They used to gain 30% health and damage every 5 minutes, so by 30 minutes a creep had almost three times its health but still paid the same gold. Now they get a small upgrade every 7.5 minutes: +12 health, +1 damage and +1 gold. At 30 minutes a melee creep has about 600 health instead of 1540.
+- **Losing a barracks is no longer the end of the game.** Powered-up creeps used to multiply on top of that growth (about 2460 health and 94 damage at 30 minutes). Now they have fixed stats:
+  - Super melee: 700 health, 40 damage. Super ranged: 475 health, 44 damage.
+  - Mega melee: 1270 health, 100 damage. Mega ranged: 1015 health, 86 damage.
+  - They get a slightly bigger upgrade every 7.5 minutes (+19 health, +2 damage).
+
 ### 0.18.7
 
 - **Lane creeps pick their targets more cleverly:**

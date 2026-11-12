@@ -15,7 +15,7 @@ export { COURIER_FLY_AT, COURIER_SPEED, courierBlocker, courierFlying, courierHo
 export type { CourierState } from './courier';
 export type { GroundItem } from './inventory';
 export type { ItemSlot, CourierSlot } from './inventory';
-export { effectiveCooldown } from './abilities';
+export { effectiveCooldown, manaCostOf } from './abilities';
 export { RUNE_INFO } from './objectives';
 export type { Rune, RuneKind } from './objectives';
 export { buybackBlocker } from './objectives';

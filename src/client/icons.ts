@@ -17,7 +17,40 @@ function muted(hex: string): string {
 const svg = (body: string, bg: string) =>
   `<svg viewBox="0 0 24 24" class="icon" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="4" fill="${muted(bg)}"/>${body.replace(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g, muted)}<path d="M4 0h16a4 4 0 0 1 4 4v7H0V4a4 4 0 0 1 4-4z" fill="#fff" opacity=".055"/><path d="M0 16h24v4a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="#000" opacity=".2"/><rect x=".5" y=".5" width="23" height="23" rx="3.6" fill="none" stroke="#d6b163" stroke-opacity=".34"/></svg>`;
 
+/** Legendary items (built from two finished items) wear a thin gold inner frame. */
+const legend = (body: string, bg: string) =>
+  svg(`${body}<rect x="1.6" y="1.6" width="20.8" height="20.8" rx="2.8" fill="none" stroke="#f2c14e" stroke-width=".9" opacity=".8"/>`, bg);
+
 const ICONS: Record<ItemId | 'tp' | 'shop' | 'courier', string> = {
+  worldbreaker: legend(
+    '<path d="M6 20.5L14.5 8" stroke="#78350f" stroke-width="2.4" stroke-linecap="round"/><path d="M9.5 6.5l6-3.5 5 6.5-6 3.5z" fill="#a8a29e" stroke="#1c1917" stroke-width="1"/><path d="M15.5 3l5 6.5" stroke="#dc2626" stroke-width="1.3"/><path d="M3 17l2 1-1 2 2 .5M4.5 13.5l-1.5-1" stroke="#fdba74" stroke-width="1.1" stroke-linecap="round" fill="none"/>',
+    '#2a0f05',
+  ),
+  warStandard: legend(
+    '<path d="M6 3v18" stroke="#78350f" stroke-width="1.8" stroke-linecap="round"/><path d="M7 4h12l-3 4.5 3 4.5H7z" fill="#f59e0b" stroke="#713f12" stroke-width="1"/><path d="M12.5 6.2v4.6M10.2 8.5h4.6" stroke="#bbf7d0" stroke-width="1.6" stroke-linecap="round"/><path d="M4.5 3.2l1.5-1.5 1.5 1.5" stroke="#fde68a" stroke-width="1" fill="none"/>',
+    '#3a1d04',
+  ),
+  bulwarkOfAges: legend(
+    '<path d="M12 3l7.5 2.6v5.6c0 4.8-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5-7.5-9.8V5.6z" fill="#57534e" stroke="#1c1917" stroke-width="1"/><path d="M12 18.5s-4.5-2.7-4.5-6A2.5 2.5 0 0 1 12 11a2.5 2.5 0 0 1 4.5 1.5c0 3.3-4.5 6-4.5 6z" fill="#dc2626" stroke="#450a0a" stroke-width=".8"/><path d="M6 7l1.5 1.2M18 7l-1.5 1.2M12 4.5v1.8" stroke="#bef264" stroke-width="1.1" stroke-linecap="round"/>',
+    '#1c1210',
+  ),
+  astralScepter: legend(
+    '<path d="M7 21L15 9" stroke="#a16207" stroke-width="2" stroke-linecap="round"/><path d="M17 2.5l1.3 3.2 3.2 1.3-3.2 1.3L17 11.5l-1.3-3.2-3.2-1.3 3.2-1.3z" fill="#c084fc" stroke="#3b0764" stroke-width=".9"/><circle cx="17" cy="7" r="1.2" fill="#fdf4ff"/><path d="M5 5.5l.6 1.4 1.4.6-1.4.6L5 9.5l-.6-1.4L3 7.5l1.4-.6z" fill="#e9d5ff"/>',
+    '#1f0a3d',
+  ),
+  tempestBlade: legend(
+    '<path d="M17.5 2.5l3.5 1-11.5 12.5-2.5-.5-.5-2.5z" fill="#c7d2fe" stroke="#1e1b4b" stroke-width="1"/><path d="M7 15.5L3.5 20.5M5 13l5.5 5.5" stroke="#a16207" stroke-width="1.8" stroke-linecap="round"/><path d="M15 11l-2 3h2l-1.5 3.5M20 11l-2.2 3.3h2.2L18 18.5" fill="none" stroke="#fde047" stroke-width="1.2" stroke-linejoin="round" stroke-linecap="round"/>',
+    '#141236',
+  ),
+  phantomMantle: legend(
+    '<path d="M12 3c-3.8 0-6 2.8-6 6.5V20l2-1.5 2 1.5 2-1.5 2 1.5 2-1.5 2 1.5V9.5C18 5.8 15.8 3 12 3z" fill="#818cf8" fill-opacity=".8" stroke="#1e1b4b" stroke-width="1"/><circle cx="9.7" cy="9.8" r="1.2" fill="#eef2ff"/><circle cx="14.3" cy="9.8" r="1.2" fill="#eef2ff"/><path d="M3 14c1.2-.6 2-.6 3 0M2.5 17.5c1.2-.6 2-.6 3 0" stroke="#c7d2fe" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".8"/>',
+    '#16123a',
+  ),
+  silencePike: legend(
+    '<path d="M19 3l2 2-9.5 9.5-2-2z" fill="#cbd5e1" stroke="#0f172a" stroke-width="1"/><path d="M11.5 12.5L4 20" stroke="#92400e" stroke-width="2.2" stroke-linecap="round"/><path d="M8 4.5a3 3 0 0 0-3 3c0 2-.8 2.8-1 3.3h8c-.2-.5-1-1.3-1-3.3a3 3 0 0 0-3-3z" fill="#a78bfa" stroke="#2e1065" stroke-width=".8"/><path d="M3.5 4l9 9" stroke="#fda4af" stroke-width="1.6" stroke-linecap="round"/>',
+    '#1a1838',
+  ),
+
   courier: svg(
     '<path d="M4 12c2.5-4 5.5-5 8-5" stroke="#e9d5ff" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M20 12c-2.5-4-5.5-5-8-5" stroke="#e9d5ff" stroke-width="1.6" stroke-linecap="round" fill="none"/><path d="M8 11h8l1 8H7z" fill="#a16207" stroke="#422006" stroke-width="1"/><path d="M10 11V9.5a2 2 0 0 1 4 0V11" stroke="#422006" stroke-width="1.2" fill="none"/><path d="M8.5 14h7" stroke="#fde68a" stroke-width="1"/>',
     '#2e1065',
@@ -210,6 +243,9 @@ export function itemImage(id: ItemId): HTMLImageElement {
 const STATUS_ICONS: Record<StatusId, string> = {
   stoneskin: ICONS.stoneskinAmulet,
   banner: ICONS.bannerOfValor,
+  warStandard: ICONS.warStandard,
+  bulwark: ICONS.bulwarkOfAges,
+  phantomMantle: ICONS.phantomMantle,
   silenced: ICONS.hushBell,
   sunder: ICONS.sunderPike,
   ghostShroud: ICONS.ghostShroud,

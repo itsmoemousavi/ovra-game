@@ -747,7 +747,7 @@ function localRect(el: HTMLElement) {
 }
 
 
-type ShopTab = 'build' | 'consumable' | 'attack' | 'defense' | 'magic' | 'upgrade';
+type ShopTab = 'build' | 'consumable' | 'attack' | 'defense' | 'magic' | 'upgrade' | 'legendary';
 const tabIcon = (d: string) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
 const SHOP_TABS: { id: ShopTab; name: string; icon: string }[] = [
   { id: 'build', name: 'For you', icon: tabIcon('<path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/>') },
@@ -756,6 +756,7 @@ const SHOP_TABS: { id: ShopTab; name: string; icon: string }[] = [
   { id: 'defense', name: 'Defense', icon: tabIcon('<path d="M12 3l7.5 2.6v5.6c0 4.8-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5-7.5-9.8V5.6z"/>') },
   { id: 'magic', name: 'Magic', icon: tabIcon('<path d="M12 3l1.9 6.1L20 11l-6.1 1.9L12 19l-1.9-6.1L4 11l6.1-1.9z"/><path d="M19 3.5v3M17.5 5h3"/>') },
   { id: 'upgrade', name: 'Gear', icon: tabIcon('<path d="M7 3.5h6.5v8.2l5 2.3c1.3.6 2 1.7 2 3V19H3.5v-2.2L7 13z"/><path d="M3.5 19v1.5h17V19"/>') },
+  { id: 'legendary', name: 'Legend', icon: tabIcon('<path d="M4 18.5h16M5 18.5L3.5 8l5 4L12 5l3.5 7 5-4L19 18.5"/><path d="M12 13.5v.01"/>') },
 ];
 
 /** Shop tab for an item, from what it gives. */

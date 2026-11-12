@@ -137,6 +137,30 @@ describe('structure protection rules', () => {
     expect(wave.filter((c) => c.creep!.type === 'ranged').every((c) => !c.creep!.super)).toBe(true);
   });
 
+  it('lane creeps get only a small upgrade over time, and a fallen barracks gives fixed stronger creeps', () => {
+    const w = newWorld();
+    const wave = (at: number) => {
+      const before = new Set(w.units.map((u) => u.id));
+      w.time = at;
+      (w as unknown as { spawnWave(): void }).spawnWave();
+      return w.units.filter((u) => !before.has(u.id) && u.creep && u.team === 0 && u.creep.lane === 'mid');
+    };
+    const melee = (units: Unit[]) => units.find((u) => u.creep!.type === 'melee')!;
+    const start = melee(wave(0));
+    expect([start.maxHp, start.damage, start.bountyGold]).toEqual([550, 21, 38]);
+    // 30:00 = four 7.5 minute upgrades: +12 health, +1 damage, +1 gold each.
+    const late = melee(wave(1800));
+    expect([late.maxHp, late.damage, late.bountyGold]).toEqual([598, 25, 42]);
+    // Its enemy melee barracks down: a super creep (700 health, 40 damage) plus the bigger super upgrade.
+    destroy(w, get(w, 1, 'tower1', 'mid')[0]);
+    destroy(w, get(w, 1, 'tower2', 'mid')[0]);
+    destroy(w, get(w, 1, 'tower3', 'mid')[0]);
+    destroy(w, get(w, 1, 'barracks', 'mid').find((r) => r.structure!.rax === 'melee')!);
+    const sup = melee(wave(1800));
+    expect(sup.creep!.super).toBe(true);
+    expect([sup.maxHp, sup.damage]).toEqual([700 + 4 * 19, 40 + 4 * 2]);
+  });
+
   it('the tower shield also makes towers attack twice as fast', () => {
     const w = newWorld();
     const t1 = get(w, 0, 'tower1', 'mid')[0];

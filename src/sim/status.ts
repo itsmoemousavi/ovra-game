@@ -40,7 +40,10 @@ export type StatusId =
   | 'boltStorm'
   | 'feralBond'
   | 'redWolf'
-  | 'manaFlask';
+  | 'manaFlask'
+  | 'warStandard'
+  | 'bulwark'
+  | 'phantomMantle';
 
 export interface Status {
   id: StatusId;
@@ -85,6 +88,9 @@ export const STATUS_INFO: Record<StatusId, { name: string; good: boolean }> = {
   feralBond: { name: 'Feral Bond: faster', good: true },
   redWolf: { name: 'Red Wolf: melee, faster and stronger', good: true },
   manaFlask: { name: 'Clearwater Flask', good: true },
+  warStandard: { name: 'War Standard: armor, regeneration and damage', good: true },
+  bulwark: { name: 'Bulwark of Ages: you take half damage', good: true },
+  phantomMantle: { name: 'Phantom Mantle: invisible', good: true },
 };
 
 const BUFF_STATUS: Record<string, StatusId> = {
@@ -97,7 +103,9 @@ const BUFF_STATUS: Record<string, StatusId> = {
   immunity: 'immunity',
   charm: 'charm',
   stoneskin: 'stoneskin',
-  'aura:bannerOfValor': 'banner',
+  'aura:valor': 'banner',
+  bulwark: 'bulwark',
+  phantomMantle: 'phantomMantle',
   silenced: 'silenced',
   sunder: 'sunder',
   ghostShroud: 'ghostShroud',
@@ -137,7 +145,7 @@ export function statusEffects(w: World, u: Unit): Status[] {
       add(b.damageMult ? 'doubleDamage' : b.invisible ? 'invisibility' : b.healPerSec ? 'regen' : 'haste', b.t);
       continue;
     }
-    const id = BUFF_STATUS[b.key];
+    const id = b.auraItem === 'warStandard' ? 'warStandard' : BUFF_STATUS[b.key];
     if (id) add(id, b.t);
   }
   // Carrying the Warden's charm.

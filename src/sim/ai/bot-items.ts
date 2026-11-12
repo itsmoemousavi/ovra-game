@@ -32,18 +32,20 @@ interface Ctx {
 const defensive = (c: Ctx): ItemId => (c.disable > 1.9 && c.physical < 1.7 ? 'wardedCloak' : 'stoneskinAmulet');
 const defensiveIfNeeded = (c: Ctx): ItemId | null => (c.struggling || c.physical > 1.8 || c.disable > 2.1 ? defensive(c) : null);
 const banner = (c: Ctx): ItemId | null => (c.allyBanner ? null : 'bannerOfValor');
+/** The team's Banner carrier upgrades it to the War Standard late. */
+const standard = (c: Ctx): ItemId | null => (c.allyBanner ? null : 'warStandard');
 
 /** Finished items in order, per hero. Functions decide situational slots (null = skip). */
 const PLANS: Record<HeroId, Pick[]> = {
-  brakk: ['platedBoots', 'vitalStone', defensiveIfNeeded, 'shadowStep', banner, 'cleavingAxe', 'crownOfAscension', 'brambleMail', defensive, 'titanHeart'],
-  grom: ['platedBoots', 'vitalStone', banner, defensiveIfNeeded, 'brambleMail', 'frostHorn', 'crownOfAscension', 'titanHeart', defensive],
-  vexa: ['fleetBoots', 'twinBlades', defensiveIfNeeded, 'stormBlade', 'keenEdge', 'reaperEdge', 'crownOfAscension', 'lifedrinker', defensive],
-  syl: ['fleetBoots', 'keenEdge', 'shadowStep', defensiveIfNeeded, 'reaperEdge', 'sunderPike', 'lifedrinker', 'crownOfAscension', defensive],
-  orin: ['arcaneBoots', 'soulChalice', defensiveIfNeeded, 'hushBell', 'focusLens', 'arcaneAmplifier', 'crownOfAscension', 'archmageStaff', defensive],
-  morra: ['arcaneBoots', 'focusLens', banner, defensiveIfNeeded, 'mendersCenser', 'crownOfAscension', 'soulChalice', defensive],
-  seren: ['arcaneBoots', 'mendersCenser', banner, defensiveIfNeeded, 'focusLens', 'crownOfAscension', 'hushBell', defensive],
-  rhen: ['fleetBoots', 'twinBlades', defensiveIfNeeded, 'keenEdge', 'stormBlade', 'reaperEdge', 'crownOfAscension', defensive],
-  kaela: ['arcaneBoots', banner, 'focusLens', defensiveIfNeeded, 'mireStaff', 'frostHorn', 'crownOfAscension', 'archmageStaff', defensive],
+  brakk: ['platedBoots', 'vitalStone', defensiveIfNeeded, 'shadowStep', banner, 'cleavingAxe', 'crownOfAscension', 'brambleMail', defensive, 'titanHeart', standard, 'bulwarkOfAges', 'worldbreaker'],
+  grom: ['platedBoots', 'vitalStone', banner, defensiveIfNeeded, 'brambleMail', 'frostHorn', 'crownOfAscension', 'titanHeart', defensive, standard, 'bulwarkOfAges'],
+  vexa: ['fleetBoots', 'twinBlades', defensiveIfNeeded, 'stormBlade', 'keenEdge', 'reaperEdge', 'crownOfAscension', 'lifedrinker', defensive, 'tempestBlade', 'worldbreaker'],
+  syl: ['fleetBoots', 'keenEdge', 'shadowStep', defensiveIfNeeded, 'reaperEdge', 'sunderPike', 'lifedrinker', 'crownOfAscension', defensive, 'worldbreaker', 'phantomMantle'],
+  orin: ['arcaneBoots', 'soulChalice', defensiveIfNeeded, 'hushBell', 'focusLens', 'arcaneAmplifier', 'crownOfAscension', 'archmageStaff', defensive, 'astralScepter', 'silencePike'],
+  morra: ['arcaneBoots', 'focusLens', banner, defensiveIfNeeded, 'mendersCenser', 'crownOfAscension', 'soulChalice', defensive, standard, 'astralScepter'],
+  seren: ['arcaneBoots', 'mendersCenser', banner, defensiveIfNeeded, 'focusLens', 'crownOfAscension', 'hushBell', defensive, standard, 'silencePike'],
+  rhen: ['fleetBoots', 'twinBlades', defensiveIfNeeded, 'keenEdge', 'stormBlade', 'reaperEdge', 'crownOfAscension', defensive, 'tempestBlade', 'worldbreaker'],
+  kaela: ['arcaneBoots', banner, 'focusLens', defensiveIfNeeded, 'mireStaff', 'frostHorn', 'crownOfAscension', 'archmageStaff', defensive, standard, 'astralScepter'],
 };
 
 /** Plays the support role: buys the team's totems. */
@@ -55,7 +57,7 @@ function context(w: World, me: Unit): Ctx {
   const h = me.hero!;
   // The Banner belongs to the first ally (in slot order) whose plan has it.
   const allyBanner = allies.some(
-    (a) => a.hero!.items.some((s) => s?.id === 'bannerOfValor') || (a.hero!.slot < h.slot && PLANS[a.hero!.defId].includes(banner)),
+    (a) => a.hero!.items.some((s) => s?.id === 'bannerOfValor' || s?.id === 'warStandard') || (a.hero!.slot < h.slot && PLANS[a.hero!.defId].includes(banner)),
   );
   return {
     me,

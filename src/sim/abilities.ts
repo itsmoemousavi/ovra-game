@@ -43,6 +43,11 @@ export function effectiveCooldown(u: Unit, def: AbilityDef, level: number): numb
   return def.cooldown[level - 1] * (1 - b.cdrPct / 100) * (def.ultimate && b.ultUpgrade ? 0.7 : 1);
 }
 
+/** Mana an ability costs this hero at this level (Astral Scepter makes spells cheaper). */
+export function manaCostOf(u: Unit, def: AbilityDef, lvl: number): number {
+  return def.manaCost[Math.max(0, lvl - 1)] * (1 - (u.hero?.bonus.manaCostPct ?? 0) / 100);
+}
+
 /** Why an ability can't be used right now, or null if it can. */
 export function castBlocker(u: Unit, slot: number): 'unlearned' | 'passive' | 'cooldown' | 'mana' | 'stunned' | 'silenced' | null {
   const def = abilityDef(u, slot);
@@ -50,7 +55,7 @@ export function castBlocker(u: Unit, slot: number): 'unlearned' | 'passive' | 'c
   if (!def || !st || st.level === 0) return 'unlearned';
   if (def.targeting === 'passive') return 'passive';
   if (st.cooldown > 0) return 'cooldown';
-  if (u.mana < def.manaCost[st.level - 1]) return 'mana';
+  if (u.mana < manaCostOf(u, def, st.level)) return 'mana';
   if (!u.alive || u.stunTimer > 0 || u.dash) return 'stunned';
   if (u.buffs.some((b) => b.silenced)) return 'silenced';
   return null;
@@ -148,7 +153,7 @@ function execute(w: World, u: Unit, slot: number, def: AbilityDef, x: number, y:
   const lvl = st.level;
   w.breakInvisibility(u);
   w.reveal(u);
-  u.mana -= def.manaCost[lvl - 1];
+  u.mana -= manaCostOf(u, def, lvl);
   st.cooldown = effectiveCooldown(u, def, lvl);
   const m = ultMult(u, def);
   u.castLock = CAST_POINT;

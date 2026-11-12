@@ -1,4 +1,4 @@
-import { AbilityDef, ITEMS, ItemId, Unit, effectiveCooldown } from '../sim';
+import { AbilityDef, ITEMS, ItemId, Unit, effectiveCooldown, manaCostOf } from '../sim';
 import type { ItemStats } from '../sim/data/items';
 
 /**
@@ -37,6 +37,7 @@ const STAT_LINES: [keyof ItemStats, (v: number) => string][] = [
   ['spellAmpPct', (v) => `+${v}% Ability damage`],
   ['spellLifestealPct', (v) => `+${v}% Ability lifesteal`],
   ['cdrPct', (v) => `−${v}% Ability cooldowns`],
+  ['manaCostPct', (v) => `−${v}% Ability mana cost`],
   ['moveSpeedPct', (v) => `+${v}% Move speed`],
 ];
 
@@ -93,7 +94,7 @@ export function abilityCard(me: Unit, def: AbilityDef, level: number): string {
   const passive = def.targeting === 'passive';
   let html = `<h3 class="c-name">${def.name}${def.ultimate ? ' <small>Ultimate</small>' : ''}</h3>`;
   if (!passive) {
-    html += `<div class="c-levels">${line('Mana', perLevel(def.manaCost, level))}${line(
+    html += `<div class="c-levels">${line('Mana', perLevel(def.manaCost.map((_, i) => Math.round(manaCostOf(me, def, i + 1))), level))}${line(
       'Cooldown',
       perLevel(def.cooldown.map((_, i) => effectiveCooldown(me, def, i + 1)), level),
     )}</div>`;

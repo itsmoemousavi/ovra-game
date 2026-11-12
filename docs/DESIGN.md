@@ -55,7 +55,7 @@ If 3D performance in a Capacitor WebView ever becomes a blocker, the simulation 
   2b. Barracks of a lane: after that lane's Tier‑3 falls. A standing melee barracks regenerates 5 health a second.
   3. Both Shrine towers: after **any** barracks of that team falls.
   4. Shrine: after **both** Shrine towers fall. **Destroying the Shrine wins.**
-- Losing a barracks makes the enemy's creeps in that lane **super creeps** (×1.6 HP/damage).
+- Losing a barracks makes that creep type of the enemy's creeps in that lane **super creeps** (fixed stats: melee 700 HP / 40 damage, ranged 475 / 44; Mega: 1270 / 100 and 1015 / 86; `POWERED_CREEPS` in `data/units.ts`).
 
 ## 4. Units & economy (current numbers, all in `src/sim/data`)
 
@@ -212,7 +212,7 @@ Goal: 15–20 minute matches. Bots-only test matches went from 33–53 min to **
 |---|---|
 | Building health | Tier-1 1800 → 1400, tier-2 2200 → 1700, barracks 2000 → 1500, shrine towers 2600 → 1700, Shrine 4500 → 3000 |
 | Building gold for the team | slightly higher (tier-1 140, tier-2 180, shrine towers 220) |
-| Creep growth | +12% → +30% health and damage every 5 minutes |
+| Creep growth | +30% every 5 min → +12 HP / +1 damage / +1 gold every 7.5 min (0.18.8) |
 | Passive gold | 2 → 3 per second |
 | XP table | about 15% faster (level 6 around minute 5) |
 | Respawn time | 4 + 2×level → 3 + 1.5×level seconds |
@@ -385,7 +385,7 @@ Numbers are in `src/sim/constants.ts`, `data/units.ts` and `objectives.ts`.
 
 **Assists:** every enemy hero that damaged the victim in the last 12 s gets an assist and some gold.
 
-**Creep growth:** lane creeps gain 12% HP and damage every 5 minutes (like Dota's creep upgrades), so late games can't stall forever.
+**Creep growth:** every 7.5 minutes new lane creeps gain +12 HP, +1 damage and +1 gold (super/mega: +19 HP, +2 damage), at most 30 times (`CREEP_UPGRADE` in `data/units.ts`). The old +30% every 5 minutes made late creeps far too tough (owner, 2026-11-11).
 
 ## 7. Bots
 

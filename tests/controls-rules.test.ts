@@ -326,7 +326,7 @@ describe('Mega Creeps', () => {
     w.events.length = 0;
     const mega = wave();
     expect(mega.every((c) => c.creep!.mega)).toBe(true);
-    expect(mega[0].maxHp).toBeGreaterThan(normal.maxHp * 2.5);
+    expect(mega[0].maxHp).toBeGreaterThan(normal.maxHp * 2);
     expect(mega[0].damage).toBeGreaterThan(normal.damage * 2.5);
     expect(w.events.some((e) => e.type === 'megaCreeps' && e.team === 0)).toBe(true);
   });

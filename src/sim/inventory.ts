@@ -62,6 +62,8 @@ export function itemBonuses(items: (ItemSlot | null)[]): Required<ItemStats> {
     thornsPct: 0,
     sunderArmor: 0,
     chainChance: 0,
+    chainTargets: 2,
+    manaCostPct: 0,
     buildingDamagePct: 0,
     attackRange: 0,
     teleportBoots: false,
@@ -92,6 +94,8 @@ export function itemBonuses(items: (ItemSlot | null)[]): Required<ItemStats> {
     b.thornsPct = Math.max(b.thornsPct, s.thornsPct ?? 0);
     b.sunderArmor = Math.max(b.sunderArmor, s.sunderArmor ?? 0);
     b.chainChance = Math.max(b.chainChance, s.chainChance ?? 0);
+    b.chainTargets = Math.max(b.chainTargets, s.chainTargets ?? 0);
+    b.manaCostPct = Math.max(b.manaCostPct, s.manaCostPct ?? 0);
     b.buildingDamagePct = Math.max(b.buildingDamagePct, s.buildingDamagePct ?? 0);
     b.attackRange = Math.max(b.attackRange, s.attackRange ?? 0);
     b.teleportBoots ||= !!s.teleportBoots;
@@ -327,6 +331,11 @@ export function useItem(w: World, u: Unit, slot: number, x?: number, y?: number)
       u.path = null;
       h.channel = null;
       if (h.order.type === 'move') h.order = { type: 'idle' };
+      const veil = ITEMS[s.id].blinkVeil;
+      if (veil) w.addBuff(u, { key: 'phantomMantle', t: veil, invisible: true });
+    } else if (active.kind === 'bulwark') {
+      w.addBuff(u, { key: 'bulwark', t: active.duration ?? 5, damageCutPct: active.amount ?? 50 });
+      w.events.push({ type: 'itemActive', unitId: u.id, kind: 'bulwark' });
     } else if (active.kind === 'manaBurst') {
       for (const a of w.heroes) {
         if (!a.alive || a.team !== u.team || dist(a.x, a.y, u.x, u.y) > (active.range ?? 10)) continue;
@@ -597,8 +606,9 @@ export const charmSlot = (u: Unit) => u.hero?.items.findIndex((s) => s?.id === '
 export const emptyInventory = (): (ItemSlot | null)[] => Array<ItemSlot | null>(INVENTORY_SLOTS).fill(null);
 
 /**
- * Item auras (Banner of Valor): every tick, refresh a short buff on allied heroes near each
- * holder. Same-kind auras share one buff key, so two banners don't stack.
+ * Item auras (Banner of Valor, War Standard): every tick, refresh a short buff on allies near each
+ * holder. Auras with the same key share one buff, and the strongest one counts.
+ * War Standard also covers allied lane creeps.
  */
 export function updateItemAuras(w: World) {
   for (const u of w.heroes) {
@@ -606,10 +616,23 @@ export function updateItemAuras(w: World) {
     for (const slot of u.hero!.items) {
       const aura = slot && ITEMS[slot.id].aura;
       if (!aura) continue;
-      for (const a of w.heroes) {
-        if (!a.alive || a.team !== u.team || dist(a.x, a.y, u.x, u.y) > aura.radius) continue;
-        w.addBuff(a, { key: `aura:${slot!.id}`, t: 0.5, armor: aura.armor, healPerSec: aura.hpRegen });
-      }
+      const key = `aura:${aura.key}`;
+      const give = (a: Unit) => {
+        if (!a.alive || a.team !== u.team || dist(a.x, a.y, u.x, u.y) > aura.radius) return;
+        const cur = a.buffs.find((b) => b.key === key);
+        if (cur && (cur.armor ?? 0) > aura.armor) return;
+        w.addBuff(a, {
+          key,
+          t: 0.5,
+          armor: aura.armor,
+          healPerSec: aura.hpRegen,
+          bonusDamage: aura.damage,
+          buildingDamagePct: a.creep ? aura.creepBuildingDamagePct : undefined,
+          auraItem: slot!.id,
+        });
+      };
+      for (const a of w.heroes) give(a);
+      if (aura.creepBuildingDamagePct) for (const c of w.units) if (c.creep && !c.summon) give(c);
     }
   }
 }

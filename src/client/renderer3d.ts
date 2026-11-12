@@ -942,6 +942,7 @@ export class Renderer3D extends Renderer {
       if (b.key === 'salve') this.fx3.heroAura(id, x, y, 'heal', 0x4ade80, fade(b.t));
       else if (b.key === 'immunity') this.fx3.heroAura(id, x, y, 'bubble', 0xfbbf24, fade(b.t));
       else if (b.key === 'stoneskin') this.fx3.heroAura(id, x, y, 'shell', 0x8b7d6b, fade(b.t));
+      else if (b.key === 'bulwark') this.fx3.heroAura(id, x, y, 'shell', 0x9a4a32, fade(b.t));
       else if (b.key === 'slow:frostHorn') this.fx3.heroAura(id, x, y, 'glow', 0x93c5fd, fade(b.t) * 0.7, 0.8);
       else if (b.key === 'slow:mireStaff') this.fx3.heroAura(id, x, y, 'glow', 0x65a30d, fade(b.t) * 0.7, 0.8);
       else if (b.key === 'aegis') this.fx3.heroAura(id, x, y, 'bubble', 0xa8d8ee, fade(b.t));

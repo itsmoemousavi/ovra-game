@@ -3,6 +3,7 @@ import {
   DT,
   FIRST_WAVE_TIME,
   FOUNTAIN_HEAL_RADIUS,
+  LAST_SKILL_POINT_LEVEL,
   MAX_LEVEL,
   MELEE_PER_WAVE,
   PASSIVE_GOLD_PER_SEC,
@@ -12,7 +13,6 @@ import {
   DEATH_GOLD,
   MULTI_KILL_WINDOW,
   UPHILL_MISS_CHANCE,
-  CREEP_GROWTH_PER_5MIN,
   CHARM_DURATION,
   DENY_CREEP,
   DENY_TOWER,
@@ -34,7 +34,7 @@ import {
   otherTeam,
 } from './constants';
 import { HEROES, HeroId, maxAbilityLevel } from './data/heroes';
-import { BARRACKS, CREEPS, CombatStats, HERO_VISION, MEGA_CREEP_MULT, MELEE_BARRACKS_REGEN, NEUTRALS, STRUCTURES, SUPER_CREEP_MULT } from './data/units';
+import { BARRACKS, CREEP_UPGRADE, CREEPS, CombatStats, HERO_VISION, MELEE_BARRACKS_REGEN, NEUTRALS, POWERED_CREEPS, STRUCTURES } from './data/units';
 import { ITEMS, ItemId, ItemStats, TELEPORT } from './data/items';
 import { GroundItem, ItemSlot, charmSlot, updateItemAuras, buyItem, buyTeleport, dropItem, emptyInventory, expireGroundItems, itemBonuses, pickUpItem, sellCourierItem, sellItem, spendTeleport, startTeleport, swapItems, updateChannel, useItem } from './inventory';
 import { CourierState, courierGround, dropCourierItem, newCourier, sendCourier, updateCouriers } from './courier';
@@ -180,6 +180,14 @@ export interface Buff {
   critChance?: number;
   /** Extra attack damage while it lasts (Red Wolf). */
   formDamage?: number;
+  /** Extra attack damage from an aura (War Standard). */
+  bonusDamage?: number;
+  /** Attacks on buildings deal this % more (War Standard on lane creeps). */
+  buildingDamagePct?: number;
+  /** Takes this % less damage of every kind (Bulwark of Ages). */
+  damageCutPct?: number;
+  /** The item an aura buff comes from (Banner of Valor or War Standard). */
+  auraItem?: string;
   /** Fires a bolt at a nearby enemy every BOLT_EVERY seconds (Bolt Storm). */
   boltDamage?: number;
   boltTimer?: number;
@@ -491,7 +499,7 @@ export type GameEvent =
   | { type: 'announce'; unitId: number; victimId: number; firstBlood: boolean; multi: number; streak: number; shutdown: number }
   | { type: 'immunity'; unitId: number }
   /** An item button was used (Arcane Boots, Frost Horn, Stoneskin Amulet). */
-  | { type: 'itemActive'; unitId: number; kind: 'manaBurst' | 'frostNova' | 'stoneskin' | 'silence' | 'teamHeal' | 'vanish' | 'mire' | 'salve'; targetId?: number }
+  | { type: 'itemActive'; unitId: number; kind: 'manaBurst' | 'frostNova' | 'stoneskin' | 'silence' | 'teamHeal' | 'vanish' | 'mire' | 'salve' | 'bulwark'; targetId?: number }
   | { type: 'chainLightning'; sourceId: number; targetIds: number[] }
   | { type: 'shieldBreak'; unitId: number }
   | { type: 'megaCreeps'; team: Team }
@@ -1147,24 +1155,27 @@ export class World {
           const u = this.newUnit('creep', team, pos, CREEPS[type]);
           const enemyRaxDown = raxDown(type);
           const mega = this.findStructure(otherTeam(team), 'barracks').every((r) => !r.alive);
-          // Creeps grow stronger as the match goes on, so games can't stall forever.
-          const grow = 1 + CREEP_GROWTH_PER_5MIN * Math.floor(this.time / 300);
-          u.maxHp = u.hp = Math.round(u.hp * grow);
-          u.damage = Math.round(u.damage * grow);
+          const power = mega ? 'mega' : enemyRaxDown ? 'super' : null;
+          if (power) {
+            const p = POWERED_CREEPS[power][type];
+            u.maxHp = u.hp = p.hp;
+            u.damage = p.damage;
+            u.armor = p.armor;
+            u.bountyGold = Math.round(u.bountyGold * p.gold);
+          }
           if (mega) {
-            u.maxHp = u.hp = Math.round(u.hp * MEGA_CREEP_MULT.hp);
-            u.damage = Math.round(u.damage * MEGA_CREEP_MULT.damage);
-            u.bountyGold = Math.round(u.bountyGold * MEGA_CREEP_MULT.gold);
             u.radius *= 1.25;
             if (!this.megaAnnounced[team]) {
               this.megaAnnounced[team] = true;
               this.events.push({ type: 'megaCreeps', team });
             }
-          } else if (enemyRaxDown) {
-            u.maxHp = u.hp = Math.round(u.hp * SUPER_CREEP_MULT.hp);
-            u.damage = Math.round(u.damage * SUPER_CREEP_MULT.damage);
-            u.bountyGold = Math.round(u.bountyGold * SUPER_CREEP_MULT.gold);
           }
+          // A small upgrade every 7.5 minutes, so late games still move a little.
+          const ups = Math.max(0, Math.min(CREEP_UPGRADE.max, Math.floor(this.time / CREEP_UPGRADE.interval)));
+          const up = power ? CREEP_UPGRADE.powered : CREEP_UPGRADE.normal;
+          u.maxHp = u.hp = u.hp + up.hp * ups;
+          u.damage += up.damage * ups;
+          u.bountyGold += CREEP_UPGRADE.gold * ups;
           u.creep = { type, lane, path, wp: 1, super: enemyRaxDown, mega };
           u.facing = dAtan2(dy, dx);
         });
@@ -1954,6 +1965,7 @@ export class World {
     const crit = !!u.hero?.lastCrit;
     // High ground: ranged attacks from lower ground onto higher ground miss 25% of the time (melee never does).
     const miss = u.projectileSpeed > 0 && heightAt(this.map, u.x, u.y) < heightAt(this.map, t.x, t.y) && this.rng.next() < UPHILL_MISS_CHANCE;
+    for (const b of u.buffs) damage += b.bonusDamage ?? 0;
     for (const b of u.buffs) if (b.damageMult) damage *= b.damageMult;
     if (u.projectileSpeed > 0) {
       this.projectiles.push({
@@ -2004,6 +2016,10 @@ export class World {
     if (kind === 'attack' && target.structure && src?.hero && !dealer?.summon) raw *= 1 + src.hero.bonus.buildingDamagePct / 100;
     // Creatures are for fights, not sieges.
     if (target.structure && dealer?.summon) raw *= SUMMON_BUILDING_MULT;
+    // War Standard: lane creeps near its holder hit buildings harder.
+    if (kind === 'attack' && target.structure && dealer?.creep) {
+      for (const b of dealer.buffs) if (b.buildingDamagePct) raw *= 1 + b.buildingDamagePct / 100;
+    }
     // Nothing from outside the Warden's house hurts it (spells and arrows included).
     if (target.neutral?.boss && src && src !== target && !inHouse(this.map, src.x, src.y)) return;
     // Wards ignore spells and splash; every direct attack from a hero takes exactly half, so two
@@ -2021,6 +2037,8 @@ export class World {
       for (const z of this.zones) {
         if (z.reduction && z.team === target.team && dist(z.x, z.y, target.x, target.y) <= z.radius + target.radius) cut = Math.max(cut, z.reduction);
       }
+      // Bulwark of Ages: the strongest cut counts, they don't add up.
+      for (const b of target.buffs) if (b.damageCutPct) cut = Math.max(cut, b.damageCutPct);
       amount *= 1 - cut / 100;
       // Aegis soaks up what's left, before it reaches your health.
       const shield = target.buffs.find((b) => b.absorb);
@@ -2094,7 +2112,7 @@ export class World {
       const near = this.units
         .filter((e) => e !== target && e.alive && e.team !== src.team && e.kind !== 'structure' && !e.ward && dist(e.x, e.y, target.x, target.y) <= CHAIN_RADIUS)
         .sort((p, q) => dist(p.x, p.y, target.x, target.y) - dist(q.x, q.y, target.x, target.y))
-        .slice(0, 2);
+        .slice(0, b.chainTargets);
       const hit = target.alive ? [target, ...near] : near;
       if (!hit.length) return;
       this.events.push({ type: 'chainLightning', sourceId: src.id, targetIds: hit.map((e) => e.id) });
@@ -2249,7 +2267,7 @@ export class World {
     h.xp += amount;
     while (h.level < MAX_LEVEL && h.xp >= XP_TABLE[h.level]) {
       h.level++;
-      h.skillPoints++;
+      if (h.level <= LAST_SKILL_POINT_LEVEL) h.skillPoints++;
       this.applyHeroStats(u);
       this.events.push({ type: 'levelUp', unitId: u.id, level: h.level });
     }
