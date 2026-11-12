@@ -42,8 +42,8 @@ describe('smarter bots', () => {
       kills = [kills[0] + w.teamKills[0], kills[1] + w.teamKills[1]];
     }
     // Hard bots clearly win the fights (about 4x the kills), but they don't reliably win the match
-    // yet: 8 of 24 over seeds 7-30 (2026-11-05). They group up to push and lose an unguarded lane.
-    // That's a known open item, so this only demands the fight edge.
+    // yet: 10 of 18 over seeds 7-24 (2026-11-11; it was 0 of 12 before defending became a side job for
+    // a few bots and the Warden waited for two dead enemies). This only demands the fight edge.
     expect(kills[0]).toBeGreaterThan(kills[1] * 2);
   }, 300_000);
 });

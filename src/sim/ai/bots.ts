@@ -53,7 +53,7 @@ const AIM: Record<BotDifficulty, { error: number; castChance: number }> = {
 };
 
 /** Bots start grouping up to push after this many seconds (when not outnumbered). */
-const PUSH_AFTER = 360;
+const PUSH_AFTER = 20 * 60;
 /**
  * Late game: pushes become sieges. The whole team picks one building, gathers outside its reach,
  * and goes in together until it falls (creeps stay weak late, so heroes have to break bases).
@@ -75,6 +75,8 @@ interface TeamPlan {
   since?: number;
   /** Heroes taking part in the push. */
   members?: number[];
+  /** Defend: when enemies were last at the building. */
+  lastThreat?: number;
   /** Late game: the building the whole team is sieging. */
   siege?: boolean;
   targetId?: number;
@@ -83,32 +85,87 @@ interface TeamPlan {
 /** Shrine towers and the Shrine have no lane: sieges reach them along the middle lane. */
 const laneOf = (s: Unit): LaneId => s.structure!.lane ?? 'mid';
 
+/** The team plan as last decided (no new decision). */
+function teamPlanOf(w: World, team: Team): TeamPlan | undefined {
+  return (w as unknown as { botPlans?: Record<number, TeamPlan> }).botPlans?.[team];
+}
+
+/**
+ * Who goes to defend a building: one more bot than there are enemy heroes at it, closest first
+ * (a ready teleport counts as close). The rest keep their lanes: the whole team walking over for
+ * every push lost hard bots almost every match against easy bots, who never leave their lanes.
+ */
+function defenders(w: World, team: Team, s: Unit): number[] {
+  const heroesThere = w.heroes.filter((e) => e.alive && e.team !== team && dist(e.x, e.y, s.x, s.y) < 20).length;
+  const ours = w.heroes.filter((h) => h.team === team && h.alive);
+  const reach = (h: Unit) => Math.min(dist(h.x, h.y, s.x, s.y), tpBlocker(h) ? Infinity : 40);
+  return ours
+    .sort((a, b) => reach(a) - reach(b))
+    .slice(0, Math.min(ours.length, heroesThere + 1))
+    .map((h) => h.id);
+}
+
+interface Defense {
+  structureId: number;
+  lane: LaneId;
+  members: number[];
+  since: number;
+  /** When enemies were last at the building. */
+  lastThreat: number;
+  until: number;
+}
+
+/**
+ * Which building a few of the team's bots defend right now, if any. It runs beside the team plan:
+ * the defenders leave it, everyone else keeps sieging or farming.
+ */
+function teamDefense(w: World, team: Team): Defense | undefined {
+  const cache = (w as unknown as { botDefense?: Record<number, Defense | undefined> }).botDefense ??= {};
+  const cur = cache[team];
+  if (cur && w.time < cur.until) return cur;
+  const until = w.time + 2;
+  // Keep defending while enemies are still at that building, and stay on guard a while after they
+  // step away (base buildings longer): leaving at once had bots walking back and forth across the map
+  // while the attackers came straight back.
+  if (cur) {
+    const s = w.unit(cur.structureId);
+    const still = s?.alive && w.units.some((e) => e.alive && e.team !== team && e.team !== 2 && !e.structure && dist(e.x, e.y, s.x, s.y) < 18);
+    const guard = s?.structure!.tier === 'tower1' || s?.structure!.tier === 'tower2' ? 6 : 15;
+    if (still) return (cache[team] = { ...cur, until, lastThreat: w.time });
+    if (s?.alive && w.time - cur.lastThreat < guard) return (cache[team] = { ...cur, until });
+  }
+  // A building that enemies are hitting (heroes, or several creeps on an inner building).
+  let defend: { s: Unit; threat: number } | null = null;
+  for (const s of w.units) {
+    if (!s.structure || !s.alive || s.team !== team || s.structure.tier === 'fountain') continue;
+    let threat = 0;
+    let heroes = 0;
+    for (const e of w.units) {
+      if (!e.alive || e.team === team || e.team === 2 || e.structure || dist(e.x, e.y, s.x, s.y) > 14) continue;
+      threat += e.hero ? 3 : 1;
+      if (e.hero) heroes++;
+    }
+    // Only against heroes: the base against any, outer towers against a group (2+). Creep pushes and
+    // a lone hero at an outer tower are the lane's job: bots leaving a siege to save every tower lost
+    // the race to teams that just kept pushing.
+    const base = s.structure.tier !== 'tower1' && s.structure.tier !== 'tower2';
+    if (!heroes || (!base && heroes < 2)) continue;
+    const important = 2;
+    if (threat >= 3 && (!defend || threat + important > defend.threat)) defend = { s, threat: threat + important };
+  }
+  if (!defend) return (cache[team] = undefined);
+  const s = defend.s;
+  const same = cur?.structureId === s.id;
+  // Commit for a while (on the big map, flip-flopping wastes the whole walk).
+  return (cache[team] = { structureId: s.id, lane: laneOf(s), until: w.time + 6, since: same ? cur!.since : w.time, lastThreat: w.time, members: same ? cur!.members : defenders(w, team, s) });
+}
+
 /** What a team's bots should be doing together. */
 function teamPlan(w: World, team: Team): TeamPlan {
   const cache = (w as unknown as { botPlans?: Record<number, TeamPlan> }).botPlans ??= {};
   const cur = cache[team];
   if (cur && w.time < cur.until) return cur;
   const until = w.time + 2;
-  // Keep defending while enemies are still at that building (don't turn back halfway).
-  if (cur?.mode === 'defend') {
-    const s = w.unit(cur.structureId);
-    const still = s?.alive && w.units.some((e) => e.alive && e.team !== team && e.team !== 2 && !e.structure && dist(e.x, e.y, s.x, s.y) < 18);
-    if (still) return (cache[team] = { ...cur, until });
-  }
-  // Defend a building that enemies are hitting (heroes, or several creeps on an inner building).
-  let defend: { s: Unit; threat: number } | null = null;
-  for (const s of w.units) {
-    if (!s.structure || !s.alive || s.team !== team || s.structure.tier === 'fountain') continue;
-    let threat = 0;
-    for (const e of w.units) {
-      if (!e.alive || e.team === team || e.team === 2 || e.structure || dist(e.x, e.y, s.x, s.y) > 14) continue;
-      threat += e.hero ? 3 : 1;
-    }
-    const important = s.structure.tier !== 'tower1' ? 2 : 0;
-    if (threat >= 3 && (!defend || threat + important > defend.threat)) defend = { s, threat: threat + important };
-  }
-  // Commit to a defence for a while (on the big map, flip-flopping wastes the whole walk).
-  if (defend) return (cache[team] = { mode: 'defend', structureId: defend.s.id, lane: defend.s.structure!.lane ?? 'mid', until: w.time + 6 });
   // Push together when we have the upper hand.
   const alive = (t: Team) => w.units.filter((h) => h.hero && h.alive && h.team === t).length;
   if (wantWarden(w, team, cur, alive(team), alive((1 - team) as Team))) {
@@ -170,6 +227,13 @@ export function botThink(w: World, me: Unit) {
   if (h.bot.retreating && hpRatio > 0.9) h.bot.retreating = false;
   if (h.bot.retreating) {
     const f = w.respawnPoint(me.team as Team, h.slot);
+    // Far from home with nobody chasing: teleport back instead of the long walk.
+    const fountain = w.structures.find((s) => s.team === me.team && s.structure!.tier === 'fountain');
+    const chased = w.heroes.some((e) => e.alive && e.team !== me.team && w.canSee(me.team, e) && dist(e.x, e.y, me.x, me.y) < 16);
+    if (diff0(me) !== 'easy' && fountain && dist(me.x, me.y, f.x, f.y) > 80 && !chased && !tpBlocker(me)) {
+      w.applyCommand({ type: 'teleport', unitId: me.id, targetId: fountain.id });
+      return;
+    }
     if (dist(me.x, me.y, f.x, f.y) > 2) w.applyCommand({ type: 'moveTo', unitId: me.id, x: f.x, y: f.y });
     return;
   }
@@ -178,6 +242,9 @@ export function botThink(w: World, me: Unit) {
   let plan: TeamPlan = diff === 'easy' ? { mode: 'farm' as const, until: 0 } : teamPlan(w, me.team as Team);
   // Bots left out of a push (their own lane was being pushed when it started) keep farming it.
   if (plan.mode === 'push' && plan.members && !plan.members.includes(me.id)) plan = { mode: 'farm', until: 0 };
+  // A few bots peel off to defend a building; the rest keep to the team plan.
+  const guard = diff === 'easy' ? undefined : teamDefense(w, me.team as Team);
+  if (guard?.members.includes(me.id)) plan = { mode: 'defend', structureId: guard.structureId, lane: guard.lane, until: 0 };
   // Defending / pushing bots work in the plan's lane instead of their own.
   const lane = plan.mode === 'farm' ? h.lane : plan.lane ?? h.lane;
   const path = teamLanePath(w.map, me.team as Team, lane);
@@ -210,6 +277,13 @@ export function botThink(w: World, me: Unit) {
   if (plantSentry(w, me)) return;
   const target = chooseTarget(w, me, hpRatio) ?? (diff !== 'easy' && !careful ? gankTarget(w, me, hpRatio) : undefined);
   if (target && useAbilities(w, me, target)) return;
+  // Skilled bots switch auto attack off while laning against a hero (it would push the wave
+  // and spend the killing blows), and back on otherwise.
+  if (diff !== 'easy') {
+    const auto = !contestedLane(w, me) || !!plan.siege;
+    if (h.autoAttack !== auto) w.applyCommand({ type: 'setAutoAttack', unitId: me.id, enabled: auto });
+  }
+  if (!target && waitForLastHit(w, me)) return;
   if (!target && answerPing(w, me, pings)) return;
   if (!target && (grabRune(w, me) || plantWard(w, me, path))) return;
   if (target) {
@@ -319,6 +393,36 @@ function siege(w: World, me: Unit, plan: TeamPlan, path: { x: number; y: number 
   return true;
 }
 
+/**
+ * Skilled bots in a contested lane: stand next to the enemy creep that will soon die (or our own,
+ * to deny) and hold the swing until the killing blow is there.
+ */
+function waitForLastHit(w: World, me: Unit): boolean {
+  if (me.hero!.bot.difficulty === 'easy' || !contestedLane(w, me)) return false;
+  let best: Unit | undefined;
+  let bestHp = Infinity;
+  for (const c of w.units) {
+    if (!c.creep || !c.alive || dist(c.x, c.y, me.x, me.y) > 12) continue;
+    if (c.team !== me.team ? !w.canAttack(me, c) || !w.canSee(me.team, c) : c.hp > c.maxHp * 0.6) continue;
+    const hp = healthWhenHit(w, me, c);
+    if (hp > afterArmor(me.damage, w.armorOf(c)) * 2.5 || hp >= bestHp) continue;
+    const reach = me.attackRange + me.radius + c.radius;
+    const t = Math.max(0, (dist(me.x, me.y, c.x, c.y) - reach + 0.3) / Math.max(0.01, dist(me.x, me.y, c.x, c.y)));
+    if (!isSafe(w, me, me.x + (c.x - me.x) * t, me.y + (c.y - me.y) * t)) continue;
+    best = c;
+    bestHp = hp;
+  }
+  if (!best) return false;
+  const d = dist(me.x, me.y, best.x, best.y);
+  const reach = me.attackRange + me.radius + best.radius;
+  if (d > reach - 0.3) {
+    w.applyCommand({ type: 'moveTo', unitId: me.id, x: best.x, y: best.y });
+  } else if (me.hero!.order.type !== 'idle') {
+    w.applyCommand({ type: 'stop', unitId: me.id });
+  }
+  return true;
+}
+
 /** Enemy creeps have pushed past the middle of this lane (onto our half). */
 function laneUnderPressure(w: World, team: Team, lane: LaneId): boolean {
   const path = teamLanePath(w.map, team, lane);
@@ -353,6 +457,32 @@ function isSafe(w: World, me: Unit, x: number, y: number): boolean {
   return tanks >= 2;
 }
 
+/** Damage after armor (same formula as the sim's attacks). */
+const afterArmor = (dmg: number, armor: number) => dmg * (1 - (0.06 * armor) / (1 + 0.06 * Math.abs(armor)));
+
+/**
+ * A creep's health when our next hit would land: what our creeps, towers and other heroes
+ * already hitting it take off in the time our swing (and arrow) needs.
+ */
+function healthWhenHit(w: World, me: Unit, c: Unit): number {
+  const d = dist(me.x, me.y, c.x, c.y);
+  const reach = me.attackRange + me.radius + c.radius;
+  const walk = Math.max(0, d - reach) / Math.max(1, me.moveSpeed);
+  const fly = me.projectileSpeed > 0 ? Math.min(d, reach) / me.projectileSpeed : 0;
+  const delay = walk + Math.max(0, me.attackTimer) + fly + 0.1;
+  let dps = 0;
+  for (const u of w.units) {
+    if (u === me || !u.alive || u.targetId !== c.id || u.attackInterval <= 0) continue;
+    dps += afterArmor(u.damage, w.armorOf(c)) / u.attackInterval;
+  }
+  return c.hp - dps * delay;
+}
+
+/** Laning: an enemy hero is close, so don't push the wave; only last-hit and deny. */
+function contestedLane(w: World, me: Unit): boolean {
+  return w.heroes.some((e) => e.alive && e.team !== me.team && w.canSee(me.team, e) && dist(e.x, e.y, me.x, me.y) < 24);
+}
+
 function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
   const scan = Math.max(me.attackRange + 6, 11);
   // Only what we can see; neutrals only if they're already fighting us.
@@ -363,10 +493,14 @@ function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
     scan,
     (e) => w.canSee(me.team, e) && e.kind !== 'ward' && (e.kind !== 'neutral' || e.targetId === me.id),
   );
+  const skilled = me.hero!.bot.difficulty !== 'easy';
+  const hitOn = (c: Unit) => afterArmor(me.damage, w.armorOf(c));
   // Own creeps we can deny (only worth it when this hit kills).
   const denies = w.units.filter(
-    (c) => c.creep && w.canDeny(me, c) && c.hp <= me.damage * 1.1 && dist(c.x, c.y, me.x, me.y) <= scan,
+    (c) => c.creep && w.canDeny(me, c) && (skilled ? healthWhenHit(w, me, c) <= hitOn(c) : c.hp <= me.damage * 1.1) && dist(c.x, c.y, me.x, me.y) <= scan,
   );
+  // Skilled bots in a contested lane only take killing blows on creeps (no pushing the wave).
+  const lastHitOnly = skilled && contestedLane(w, me) && !teamPlanOf(w, me.team as Team)?.siege;
   enemies.push(...denies);
   if (!enemies.length) return undefined;
 
@@ -392,7 +526,8 @@ function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
     } else if (e.creep && e.team === me.team) {
       score = 80; // deny
     } else if (e.creep) {
-      const killable = e.hp <= me.damage * 1.3;
+      const killable = skilled ? healthWhenHit(w, me, e) <= hitOn(e) : e.hp <= me.damage * 1.3;
+      if (lastHitOnly && !killable) continue;
       score = 50 + (killable ? 40 : 0) - (e.hp / e.maxHp) * 20;
     } else {
       score = 45;
@@ -407,6 +542,7 @@ function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
 }
 
 const ready = (me: Unit, slot: number) => castBlocker(me, slot) === null;
+const diff0 = (me: Unit) => me.hero!.bot.difficulty;
 
 /** Healer bots top up hurt allies first. */
 function supportAllies(w: World, me: Unit): boolean {
@@ -688,8 +824,11 @@ function defend(w: World, me: Unit, plan: TeamPlan): boolean {
   if (d < 16) {
     // Close enough: fight whoever is attacking it, otherwise hold here (don't wander off
     // down the lane and walk straight back).
+    // Whoever is at the building, or close to us: in the base the next building over is often the one being hit.
     const attackers = w.units.filter(
-      (e) => e.alive && e.team !== me.team && e.team !== 2 && !e.structure && dist(e.x, e.y, s.x, s.y) < 18 && w.canAttack(me, e),
+      (e) =>
+        e.alive && e.team !== me.team && e.team !== 2 && !e.structure && !e.ward && w.canSee(me.team, e) && w.canAttack(me, e) &&
+        (dist(e.x, e.y, s.x, s.y) < 18 || dist(e.x, e.y, me.x, me.y) < 20),
     );
     if (!attackers.length) {
       if (me.hero!.order.type === 'move') w.applyCommand({ type: 'stop', unitId: me.id });
@@ -786,7 +925,9 @@ function wantWarden(w: World, team: Team, cur: TeamPlan | undefined, ours: numbe
     return fit >= 2 && enemiesNear <= fit && w.time < (cur.since ?? 0) + 90;
   }
   const hard = heroes.some((h) => h.hero!.bot.difficulty === 'hard');
-  if (w.time < (hard ? 14 : 17) * 60 || ours < 3 || theirs > ours - (w.time > 24 * 60 ? 0 : 1)) return false;
+  // Only while two enemy heroes are dead: going in any earlier handed the enemy the map (hard bots won
+  // 8 of 12 against easy bots without the Warden, 4-5 of 12 when one dead enemy, or none after 24 min, was enough).
+  if (w.time < (hard ? 14 : 17) * 60 || ours < 3 || theirs > ours - 2) return false;
   const avgLevel = heroes.reduce((s, h) => s + h.hero!.level, 0) / heroes.length;
   return avgLevel >= 11 && heroes.every((h) => h.hp > h.maxHp * 0.75);
 }

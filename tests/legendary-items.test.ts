@@ -53,7 +53,7 @@ describe('legendary items', () => {
     expect(me.hero!.gold).toBe(2000 - (5000 - 1200 - 2700));
   });
 
-  it('Bulwark of Ages halves the damage you take while it lasts', () => {
+  it('Bulwark of Ages cuts the damage you take by 60% while it lasts', () => {
     const { w, hero } = humans();
     const me = hero(0, 'brakk');
     const foe = hero(1, 'orin');
@@ -67,7 +67,7 @@ describe('legendary items', () => {
     w.applyCommand({ type: 'useItem', unitId: me.id, slot: 0 });
     hp = me.hp;
     w.dealDamage(foe.id, me, 200, 'spell');
-    expect(hp - me.hp).toBeCloseTo(full / 2, 3);
+    expect(hp - me.hp).toBeCloseTo(full * 0.4, 3);
   });
 
   it('Astral Scepter makes abilities cost 25% less mana', () => {

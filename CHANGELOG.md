@@ -33,6 +33,27 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.19.x · The late game
 
+### 0.19.1
+
+- **Smarter bots:**
+  - Normal and hard bots time their last hits and denies: they work out how much health a creep will have when their hit lands, and wait beside it for the killing blow. With an enemy hero in their lane they no longer push the wave by hitting every creep.
+  - Bots stay in their lanes until 20 minutes instead of grouping up at 6, then siege together.
+  - Defending is smarter: bots only come to defend against enemy heroes (the base against any, outer towers against two or more), and only as many as needed, the closest ones first. The others keep pushing. They also stay on guard a little while after the attackers step back, instead of leaving at once.
+  - Bots go for the Warden only while two enemy heroes are dead.
+  - Bots far from home teleport back to heal instead of walking.
+  - Hard bots now beat easy bots in about half the matches; before, they won almost none despite winning the fights.
+- **Item changes:** Bulwark of Ages has 1000 health (was 850), and its button cuts damage by 60% (was 50%) with a 40 s cooldown (was 45 s).
+- **Hero changes** (the late-game update shifted who wins):
+  - Brakk: damage 48 → 52, +4.2 damage and +88 health per level (was 3.5 and 76).
+  - Morra: damage 54 → 60, +3.8 damage and +80 health per level (was 3.4 and 74).
+  - Orin: damage 47 → 48, +78 health per level (was 72).
+  - Vexa: damage 33 → 38, +70 health per level (was 62).
+  - Grom: damage 62 → 58.
+  - Rhen: +3.6 damage per level (was 4.0).
+  - Seren: damage 60 → 55.
+  - Syl: damage 58 → 56.
+  - Kaela: Tidal Wave damage 120/180/240/300 → 110/165/220/275.
+
 ### 0.19.0
 
 - **Lane creeps no longer get tough late in the match.** They used to gain 30% health and damage every 5 minutes, so by 30 minutes a creep had almost three times its health but still paid the same gold. Now they get a small upgrade every 7.5 minutes: +12 health, +1 damage and +1 gold. At 30 minutes a melee creep has about 600 health instead of 1540.
