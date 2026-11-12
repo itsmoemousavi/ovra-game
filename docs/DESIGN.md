@@ -95,7 +95,7 @@ If 3D performance in a Capacitor WebView ever becomes a blocker, the simulation 
 
 Bots pick random heroes (no duplicates within a team), and every hero has a recommended item build (shown in the shop). Bots themselves plan their items from their role and the enemy lineup (`src/sim/ai/bot-items.ts`): armor (Stoneskin Amulet) against attack-heavy teams, the Warded Cloak against spell- and stun-heavy ones, only one Banner of Valor per team, sentry totems against Syl, and the defensive pick sooner when a hero keeps dying.
 
-Ability levels: basic abilities max level 4 (and at most ⌈hero level / 2⌉), ultimate max level 3 (learnable at levels 6 / 10 / 14). Heroes start with 1 skill point and gain 1 per level.
+Ability levels: basic abilities max level 4 (and at most ⌈hero level / 2⌉), ultimate max level 3 (learnable at levels 6 / 10 / 14). Heroes start with 1 skill point and gain 1 per level up to 15. Levels 16–20 (owner, 2026-11-11) only add stats, no skill points (`LAST_SKILL_POINT_LEVEL`, `MAX_LEVEL` in `constants.ts`).
 
 **Implemented (milestone 3).** Numbers are in `src/sim/data/heroes.ts`; behaviour is in `src/sim/abilities.ts`.
 
@@ -174,6 +174,16 @@ Item numbers are in `src/sim/data/items.ts`.
 | **Crown of Ascension** | upgrades the hero's Ultimate (stronger effect, −30% cooldown) |
 | Herbal Poultice | consumable, heal over time |
 | Teleport Scroll | own slot, unlimited stack (see above) |
+
+### Legendary items (0.19.0, owner 2026-11-11)
+
+Late gold sinks, each built from two finished items plus a recipe price (shop tab "Legend", gold inner frame on the icon):
+Worldbreaker (Siege Maul + Reaper's Edge, 5000), War Standard (Banner of Valor + Mender's Censer, 4500; its aura shares the
+`valor` key with the Banner so they don't stack, and also covers allied lane creeps: +15 damage, +50% building damage),
+Bulwark of Ages (Titan Heart + Bramble Mail, 4700; button: −50% damage taken for 5 s), Astral Scepter (Archmage Staff +
+Soul Chalice, 5500; spells cost 25% less mana), Tempest Blade (Storm Blade + Twin Blades, 5000; lightning hits 4 extra enemies),
+Phantom Mantle (Shadow Step + Ghost Shroud, 5000; 15 m blink, then 2 s invisible), Silence Pike (Hush Bell + Sunder Pike,
+4500; 9 m / 4 s silence). Numbers are first guesses, not balanced yet.
 
 ### Combined items and items with a button (implemented)
 
@@ -407,6 +417,7 @@ Numbers are in `src/sim/constants.ts`, `data/units.ts` and `objectives.ts`.
 - **Team plan** (shared by a team's bots, refreshed every 2 s):
   - **Defend:** a building is under attack by heroes, or by several creeps on an inner building. Bots go there, teleporting if they're far away.
   - **Push:** after 10 minutes, when they have more heroes alive, bots group up in the lane with the weakest enemy defenses and push together.
+  - **Siege (0.19.0):** from 20 minutes a push becomes a siege: the whole team picks one building (closest to them, weakest on ties; shrine towers and the Shrine too, via mid), teleports near it, gathers 22 m in front of it, waits up to 25 s for a teammate and our creep wave, then goes in together and keeps to that lane until the base falls. Without it, bots couldn't finish matches once late creeps stopped growing fast (`siege` in `ai/bots.ts`).
   - **Farm:** otherwise each bot keeps its own lane.
 - **Gank:** chase a visible enemy hero below 40% health (50% on hard) within 30 m, unless it's under its towers.
 - **Difficulty** (picked on the hero-select screen, remembered):

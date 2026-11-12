@@ -54,6 +54,17 @@ const AIM: Record<BotDifficulty, { error: number; castChance: number }> = {
 
 /** Bots start grouping up to push after this many seconds (when not outnumbered). */
 const PUSH_AFTER = 360;
+/**
+ * Late game: pushes become sieges. The whole team picks one building, gathers outside its reach,
+ * and goes in together until it falls (creeps stay weak late, so heroes have to break bases).
+ */
+const SIEGE_AFTER = 20 * 60;
+/** A siege stays on its lane this long at most before choosing again. */
+const SIEGE_COMMIT = 120;
+/** Gather this far (along the lane) in front of the target building. */
+const SIEGE_RALLY = 22;
+/** Go in without a teammate, or without our creeps, after waiting this long at the gathering point. */
+const SIEGE_WAIT = 25;
 
 interface TeamPlan {
   mode: 'farm' | 'push' | 'defend' | 'warden';
@@ -64,7 +75,13 @@ interface TeamPlan {
   since?: number;
   /** Heroes taking part in the push. */
   members?: number[];
+  /** Late game: the building the whole team is sieging. */
+  siege?: boolean;
+  targetId?: number;
 }
+
+/** Shrine towers and the Shrine have no lane: sieges reach them along the middle lane. */
+const laneOf = (s: Unit): LaneId => s.structure!.lane ?? 'mid';
 
 /** What a team's bots should be doing together. */
 function teamPlan(w: World, team: Team): TeamPlan {
@@ -98,14 +115,32 @@ function teamPlan(w: World, team: Team): TeamPlan {
     return (cache[team] = { mode: 'warden', until, since: cur?.mode === 'warden' ? cur.since : w.time });
   }
   if (w.time > PUSH_AFTER && alive(team) >= 2 && alive(team) >= alive((1 - team) as Team)) {
+    const late = w.time > SIEGE_AFTER;
+    const targets = w.units.filter((s) => s.structure && s.alive && s.team !== team && s.structure.vulnerable && s.structure.tier !== 'fountain' && (late || s.structure.lane));
+    if (late) {
+      // Siege: keep the same building until it falls; then the next one in that lane, so the
+      // team walks into the base instead of across the map.
+      const prev = cur?.siege ? w.unit(cur.targetId) : undefined;
+      if (prev?.alive && prev.structure!.vulnerable && w.time < (cur!.since ?? 0) + SIEGE_COMMIT) return (cache[team] = { ...cur!, until });
+      const sameLane = cur?.siege && w.time < (cur.since ?? 0) + SIEGE_COMMIT ? targets.filter((s) => laneOf(s) === cur.lane) : [];
+      const pool = sameLane.length ? sameLane : targets;
+      // Closest to our heroes first (walking is the big cost on this map), weakest on ties.
+      const ours = w.heroes.filter((h) => h.team === team && h.alive);
+      const cost = (s: Unit) => ours.reduce((sum, h) => sum + dist(h.x, h.y, s.x, s.y), 0) / Math.max(1, ours.length) + s.hp / 60;
+      const target = pool.sort((a, b) => cost(a) - cost(b))[0];
+      if (target) {
+        const members = w.heroes.filter((h) => h.team === team).map((h) => h.id);
+        const since = prev === undefined && sameLane.length && cur ? cur.since : w.time;
+        return (cache[team] = { mode: 'push', siege: true, lane: laneOf(target), targetId: target.id, until, since, members });
+      }
+    }
     let best: { lane: 'top' | 'mid' | 'bot'; hp: number } | null = null;
-    for (const s of w.units) {
-      if (!s.structure || !s.alive || s.team === team || !s.structure.vulnerable || !s.structure.lane) continue;
-      if (!best || s.hp < best.hp) best = { lane: s.structure.lane, hp: s.hp };
+    for (const s of targets) {
+      if (!best || s.hp < best.hp) best = { lane: s.structure!.lane!, hp: s.hp };
     }
     // Stay on the lane we're already pushing (for 25 s) while it still has a target.
-    const lanes = new Set(w.units.filter((s) => s.structure && s.alive && s.team !== team && s.structure.vulnerable).map((s) => s.structure!.lane));
-    if (cur?.mode === 'push' && cur.lane && lanes.has(cur.lane) && w.time < (cur.since ?? 0) + 25) {
+    const lanes = new Set(targets.map((s) => s.structure!.lane));
+    if (cur?.mode === 'push' && !cur.siege && cur.lane && lanes.has(cur.lane) && w.time < (cur.since ?? 0) + 25) {
       return (cache[team] = { ...cur, until });
     }
     if (best) {
@@ -150,6 +185,7 @@ export function botThink(w: World, me: Unit) {
   if (plan.mode === 'defend' && defend(w, me, plan)) return;
   if (plan.mode === 'warden' && fightWarden(w, me, hpRatio)) return;
   if (grabCharm(w, me)) return;
+  if (plan.siege && siege(w, me, plan, path, hpRatio)) return;
   if (inShop(w, me) && hpRatio > 0.85 && teleportToLane(w, me, path)) return;
 
   // Under fire from a tower with nothing else to soak it? Step back.
@@ -223,6 +259,64 @@ export function botThink(w: World, me: Unit) {
   } else if (me.hero!.order.type === 'move') {
     w.applyCommand({ type: 'stop', unitId: me.id });
   }
+}
+
+/**
+ * Late-game siege: get to the target building (teleport when far), gather outside its reach,
+ * then go in together: enemy heroes nearby first, then the building, creeps or not.
+ * Returns false to let the normal lane logic run (e.g. while walking with a creep wave).
+ */
+function siege(w: World, me: Unit, plan: TeamPlan, path: { x: number; y: number }[], hpRatio: number): boolean {
+  const h = me.hero!;
+  const s = w.unit(plan.targetId);
+  if (!s || !s.alive) return false;
+  const d = dist(me.x, me.y, s.x, s.y);
+  // Far away: teleport to our building closest to the target, if that saves a long walk.
+  if (d > 70 && !tpBlocker(me)) {
+    const tp = teleportTargets(w, me.team as Team).sort((a, b) => dist(a.x, a.y, s.x, s.y) - dist(b.x, b.y, s.x, s.y))[0];
+    if (tp && dist(tp.x, tp.y, s.x, s.y) < d - 40) {
+      w.applyCommand({ type: 'teleport', unitId: me.id, targetId: tp.id });
+      return true;
+    }
+  }
+  const members = w.heroes.filter((a) => a.alive && a.team === me.team && plan.members?.includes(a.id));
+  const rally = pointAlong(path, Math.max(0, projectOnPolyline(path, s) - SIEGE_RALLY));
+  const together = members.filter((a) => dist(a.x, a.y, me.x, me.y) < 14).length;
+  const engaged = d < SIEGE_RALLY + 6;
+  // Gather: walk to the rally point and wait there for a teammate (or a little while).
+  if (!engaged || h.bot.rallySince === undefined) {
+    // A little slack before leaving the gathering point counts, so a fight nearby doesn't restart the wait.
+    if (dist(me.x, me.y, rally.x, rally.y) > (h.bot.rallySince === undefined ? 6 : 12)) {
+      h.bot.rallySince = undefined;
+      if (hpRatio < 0.5) return false; // hurt: let the normal logic decide
+      // Fight what's in the way, otherwise keep walking.
+      const t = chooseTarget(w, me, hpRatio);
+      if (t && dist(t.x, t.y, me.x, me.y) < 10) return false;
+      w.applyCommand({ type: 'moveTo', unitId: me.id, x: rally.x, y: rally.y });
+      return true;
+    }
+    h.bot.rallySince ??= w.time;
+  }
+  // Go in with our creeps when we can: a building with no enemy creeps near it shrugs off most hero damage.
+  const creeps = w.units.some((c) => c.creep && c.alive && c.team === me.team && dist(c.x, c.y, s.x, s.y) < SIEGE_RALLY + 4);
+  const waited = w.time - (h.bot.rallySince ?? w.time) > SIEGE_WAIT;
+  const ready = (together >= Math.min(2, members.length) && creeps) || waited;
+  if (!ready || hpRatio < 0.4) {
+    // Waiting (or hurt): fight only what comes close, otherwise hold the gathering point.
+    const t = chooseTarget(w, me, hpRatio);
+    if (t && dist(t.x, t.y, me.x, me.y) < 10) return false;
+    if (hpRatio < 0.4) return false;
+    if (h.order.type === 'move') w.applyCommand({ type: 'stop', unitId: me.id });
+    return true;
+  }
+  // Go in: enemy heroes near the building first, then the building itself.
+  const foe = w.heroes
+    .filter((e) => e.alive && e.team !== me.team && w.canSee(me.team, e) && w.canAttack(me, e) && dist(e.x, e.y, s.x, s.y) < 20 && dist(e.x, e.y, me.x, me.y) < 14)
+    .sort((a, b) => a.hp - b.hp)[0];
+  const target = foe ?? s;
+  if (foe && useAbilities(w, me, foe)) return true;
+  if (h.order.type !== 'attack' || h.order.targetId !== target.id) w.applyCommand({ type: 'attack', unitId: me.id, targetId: target.id });
+  return true;
 }
 
 /** Enemy creeps have pushed past the middle of this lane (onto our half). */

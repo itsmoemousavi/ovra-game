@@ -9,6 +9,7 @@ The version you're playing is shown in **Settings → View** in the game.
 
 | Version | Milestone | Date |
 |---|---|---|
+| [0.19.x](#019x--the-late-game) | The late game | 2026-11-11 |
 | [0.18.x](#018x--the-laurel-look) | The Laurel look | 2026-11-11 |
 | [0.17.x](#017x--new-sounds) | New sounds | 2026-11-06 |
 | [0.16.x](#016x--play-with-friend) | Play with Friend | 2026-11-06 |
@@ -30,15 +31,27 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ---
 
-## 0.18.x · The Laurel look
+## 0.19.x · The late game
 
-### 0.18.8
+### 0.19.0
 
 - **Lane creeps no longer get tough late in the match.** They used to gain 30% health and damage every 5 minutes, so by 30 minutes a creep had almost three times its health but still paid the same gold. Now they get a small upgrade every 7.5 minutes: +12 health, +1 damage and +1 gold. At 30 minutes a melee creep has about 600 health instead of 1540.
 - **Losing a barracks is no longer the end of the game.** Powered-up creeps used to multiply on top of that growth (about 2460 health and 94 damage at 30 minutes). Now they have fixed stats:
   - Super melee: 700 health, 40 damage. Super ranged: 475 health, 44 damage.
   - Mega melee: 1270 health, 100 damage. Mega ranged: 1015 health, 86 damage.
   - They get a slightly bigger upgrade every 7.5 minutes (+19 health, +2 damage).
+- **7 legendary items** in a new **Legend** tab of the shop. Each one is built from two finished items:
+  - **Worldbreaker** (Siege Maul + Reaper's Edge): big damage and critical hits, double damage to buildings.
+  - **War Standard** (Banner of Valor + Mender's Censer): an aura of armor, regeneration and +15 damage for you, allied heroes **and your lane creeps**, which also hit buildings 50% harder. Its button heals everyone near you for 350.
+  - **Bulwark of Ages** (Titan Heart + Bramble Mail): lots of health, returns melee damage, and its button halves the damage you take for 5 seconds.
+  - **Astral Scepter** (Archmage Staff + Soul Chalice): strong spells that cost 25% less mana and recharge faster.
+  - **Tempest Blade** (Storm Blade + Twin Blades): fast attacks, and the lightning jumps to 4 enemies instead of 2.
+  - **Phantom Mantle** (Shadow Step + Ghost Shroud): blink 15 m instead of 11, then stay invisible for 2 seconds.
+  - **Silence Pike** (Hush Bell + Sunder Pike): breaks armor harder, and its button silences enemy heroes within 9 m for 4 seconds.
+- **Heroes now reach level 20.** Levels 16 to 20 only make your hero stronger (health, damage, armor and the rest); there are no more spell points after level 15.
+- **Bots finish matches.** Late in the match (from 20 minutes), a team that isn't outnumbered picks one building, teleports close, gathers just out of its reach, waits for its creep wave and goes in together until it falls, then takes the next one into the base, up to the Shrine. Bots also buy the new items and use their buttons.
+
+## 0.18.x · The Laurel look
 
 ### 0.18.7
 

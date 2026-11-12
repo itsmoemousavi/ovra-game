@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { itemCard } from '../src/client/describe';
-import { CREEPS, HERO_IDS, ITEMS, ItemId, LANE_IDS, MAX_LEVEL, PlayerSlot, TICK_RATE, Team, Unit, World, XP_TABLE, isInvisible, manaCostOf } from '../src/sim';
+import { HERO_IDS, ITEMS, ItemId, LANE_IDS, MAX_LEVEL, PlayerSlot, TICK_RATE, Team, Unit, World, XP_TABLE, isInvisible, manaCostOf } from '../src/sim';
 import { HEROES } from '../src/sim';
 
 const LEGENDARY: ItemId[] = ['worldbreaker', 'warStandard', 'bulwarkOfAges', 'astralScepter', 'tempestBlade', 'phantomMantle', 'silencePike'];

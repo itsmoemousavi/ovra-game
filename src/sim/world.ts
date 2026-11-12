@@ -325,7 +325,7 @@ export interface HeroState {
   buybackCooldown: number;
   /** Set when a revive charm saves the hero: respawn here instead of the fountain. */
   reviveAt: Vec2 | null;
-  bot: { thinkTimer: number; retreating: boolean; buildIndex: number; difficulty: BotDifficulty; holdBackUntil?: number };
+  bot: { thinkTimer: number; retreating: boolean; buildIndex: number; difficulty: BotDifficulty; holdBackUntil?: number; rallySince?: number };
 }
 
 export interface NeutralState {
