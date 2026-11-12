@@ -498,9 +498,9 @@ export const HEROES: Record<HeroId, HeroDef> = {
         targeting: 'none',
         castRange: 0,
         radius: 0,
-        manaCost: [90, 100, 110, 120],
+        manaCost: [75, 85, 95, 105],
         cooldown: [20, 18, 16, 14],
-        values: { wolves: [1, 1, 2, 2], hp: [360, 450, 480, 580], damage: [28, 36, 38, 48], duration: [35, 35, 35, 35] },
+        values: { wolves: [1, 1, 2, 2], hp: [420, 500, 520, 620], damage: [32, 40, 42, 50], duration: [35, 35, 35, 35] },
         summary: 'Calls a wolf (two from level 3) that stays by you for 35 s, attacks whatever you attack and turns on whoever hits you. Calling again replaces the old pack. Enemies earn a little gold for killing them. Wolves deal half damage to buildings.',
       },
       {

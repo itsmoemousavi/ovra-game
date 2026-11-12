@@ -4,7 +4,7 @@ import { dist, pointAlong, polylineLength, projectOnPolyline, dAtan2, dCos, dHyp
 import type { Unit, World } from '../world';
 import { inHouse } from '../map';
 import { isInvisible } from '../vision';
-import { abilityDef, botLearn, castBlocker } from '../abilities';
+import { abilityDef, botLearn, castBlocker, manaCostOf } from '../abilities';
 import { ITEMS, ItemId, TELEPORT } from '../data/items';
 import { isTeamSupport, nextBotItem, wantsSentry } from './bot-items';
 import { buyBlocker, buyDestination, inShop, itemBlocker, recipeSources, teleportTargets, tpBlocker } from '../inventory';
@@ -222,6 +222,7 @@ export function botThink(w: World, me: Unit) {
   if (hpRatio < 0.45) useSalve(w, me);
   maybeGlyph(w, me);
   if (supportAllies(w, me)) return;
+  if (keepPack(w, me)) return;
 
   if (hpRatio < 0.3) h.bot.retreating = true;
   if (h.bot.retreating && hpRatio > 0.9) h.bot.retreating = false;
@@ -280,7 +281,7 @@ export function botThink(w: World, me: Unit) {
   // Skilled bots switch auto attack off while laning against a hero (it would push the wave
   // and spend the killing blows), and back on otherwise.
   if (diff !== 'easy') {
-    const auto = !contestedLane(w, me) || !!plan.siege;
+    const auto = !contestedLane(w, me) || !!plan.siege || hasPack(w, me);
     if (h.autoAttack !== auto) w.applyCommand({ type: 'setAutoAttack', unitId: me.id, enabled: auto });
   }
   if (!target && waitForLastHit(w, me)) return;
@@ -398,7 +399,7 @@ function siege(w: World, me: Unit, plan: TeamPlan, path: { x: number; y: number 
  * to deny) and hold the swing until the killing blow is there.
  */
 function waitForLastHit(w: World, me: Unit): boolean {
-  if (me.hero!.bot.difficulty === 'easy' || !contestedLane(w, me)) return false;
+  if (me.hero!.bot.difficulty === 'easy' || !contestedLane(w, me) || hasPack(w, me)) return false;
   let best: Unit | undefined;
   let bestHp = Infinity;
   for (const c of w.units) {
@@ -478,6 +479,8 @@ function healthWhenHit(w: World, me: Unit, c: Unit): number {
   return c.hp - dps * delay;
 }
 
+const hasPack = (w: World, me: Unit) => w.units.some((o) => o.alive && o.summon?.ownerId === me.id);
+
 /** Laning: an enemy hero is close, so don't push the wave; only last-hit and deny. */
 function contestedLane(w: World, me: Unit): boolean {
   return w.heroes.some((e) => e.alive && e.team !== me.team && w.canSee(me.team, e) && dist(e.x, e.y, me.x, me.y) < 24);
@@ -500,7 +503,8 @@ function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
     (c) => c.creep && w.canDeny(me, c) && (skilled ? healthWhenHit(w, me, c) <= hitOn(c) : c.hp <= me.damage * 1.1) && dist(c.x, c.y, me.x, me.y) <= scan,
   );
   // Skilled bots in a contested lane only take killing blows on creeps (no pushing the wave).
-  const lastHitOnly = skilled && contestedLane(w, me) && !teamPlanOf(w, me.team as Team)?.siege;
+  // (Morra with her pack out pushes on purpose: her wolves copy her attacks, and waiting left them idle.)
+  const lastHitOnly = skilled && contestedLane(w, me) && !teamPlanOf(w, me.team as Team)?.siege && !hasPack(w, me);
   enemies.push(...denies);
   if (!enemies.length) return undefined;
 
@@ -543,6 +547,24 @@ function chooseTarget(w: World, me: Unit, hpRatio: number): Unit | undefined {
 
 const ready = (me: Unit, slot: number) => castBlocker(me, slot) === null;
 const diff0 = (me: Unit) => me.hero!.bot.difficulty;
+
+/**
+ * Morra keeps her pack up: call it whenever it's ready and there's none (or it's about to run out),
+ * keeping enough mana for Feral Bond. Only calling it mid-fight with half mana left her without
+ * wolves almost half the early game.
+ */
+function keepPack(w: World, me: Unit): boolean {
+  if (me.hero!.defId !== 'morra' || !ready(me, 0) || me.hero!.bot.retreating) return false;
+  const def = abilityDef(me, 0)!;
+  const bond = abilityDef(me, 1);
+  const lvl = me.hero!.abilities[0].level;
+  const reserve = bond && me.hero!.abilities[1].level > 0 ? manaCostOf(me, bond, me.hero!.abilities[1].level) : 0;
+  if (me.mana < manaCostOf(me, def, lvl) + reserve) return false;
+  const pack = w.units.filter((o) => o.alive && o.summon?.ownerId === me.id && o.summon.kind === 'wolf');
+  if (pack.some((o) => o.summon!.expires - w.time > 4)) return false;
+  w.applyCommand({ type: 'cast', unitId: me.id, slot: 0 });
+  return true;
+}
 
 /** Healer bots top up hurt allies first. */
 function supportAllies(w: World, me: Unit): boolean {

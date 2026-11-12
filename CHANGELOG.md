@@ -33,6 +33,13 @@ The version you're playing is shown in **Settings → View** in the game.
 
 ## 0.19.x · The late game
 
+### 0.19.2
+
+- **Morra:** her wolves are tougher and cheaper early on, where she was losing most:
+  - Wolf health 360/450/480/580 → 420/500/520/620, wolf damage 28/36/38/48 → 32/40/42/50.
+  - Call the Pack costs 75/85/95/105 mana (was 90/100/110/120).
+- **Morra bots** keep their pack up: they call it whenever it's ready instead of only in a fight, and push with their wolves instead of waiting for last hits (the wolves copy her attacks, so waiting left them standing around).
+
 ### 0.19.1
 
 - **Smarter bots:**
