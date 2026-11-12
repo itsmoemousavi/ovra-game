@@ -130,12 +130,10 @@ with ~100 matches a hero's win rate still swings about ±5% from luck.
 ## Open items / next steps
 
 1. **Phone feedback on 3D**: owner checked 0.17.12 (2026-11-11): frame rate, battery, sounds and announcer all fine.
-2. **Hard bots (LATER, owner 2026-11-04)**: hard bots win fights (2-5x kills) but only ~half the matches vs easy
-   (12 seeds, before and after 2026-11-03 changes): they group-push and leave a lane alone, which gets pushed to the
-   barracks; the team plan flips between push and defend and walks across the map. CI test loosened to >=1 win of 3 + 2x kills.
-   Also not done: bots using walkways / blinking onto cliff hills, deliberate denies.
+2. **Hard bots**: 0.19.1 (2026-11-11) brought hard vs easy from 0 of 12 to about 10 of 18 wins (4x the kills). What fixed it: defending is a side job for a few bots (`teamDefense`, only against heroes), no group push before 20 min, the Warden only with two enemies dead. Easy bots never leave their lanes, which beats any plan that pulls the whole team around the big map. Measure with a hard-vs-easy script over 18+ seeds before and after any bot change. Not done: bots using walkways / blinking onto mountains.
 3. **Hero balance** on the 300 m map: all 45–55% with the 8 new items (120 matches, 2026-11-05). Bot shopping lists move these numbers a lot:
    adding an item early to a list swung Kaela and Syl by 15-20%. Red ~55% was mostly a biased test shuffle; tick order now alternates. Owner: don't chase it.
+   After the late-game update (0.19.1, about 1000 bot matches, 2026-11-11): runs swing ±7% per hero even at 250 matches. Last check on the shipped numbers: Syl 62, Kaela 59, Orin 54, Grom 52, Seren 48, Vexa 46, Brakk 45, Rhen 45, Morra 38. Morra has been the lowest in every run that day; Syl and Kaela swing between 47 and 62. Legendary items can't be judged from end-of-match ownership (rich teams buy them); compare a hero with and without the item instead.
 4. 3D polish: real art/animations, spell effects in 3D.
 5. Living world: shipped in 0.11.0. Phone frame rate and battery with the new art still need the owner's check.
 6. More heroes: Morra, Seren and Rhen shipped in 0.13.0. A 4th hero is dropped for now (owner, 2026-11-11).
